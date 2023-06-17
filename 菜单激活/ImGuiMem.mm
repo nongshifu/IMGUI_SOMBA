@@ -1,22 +1,16 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import <Metal/Metal.h>
-#import <MetalKit/MetalKit.h>
-#import <shisangeIMGUI/imgui_impl_metal.h>
-#import <shisangeIMGUI/imgui.h>
-
-
-#import "ImGuiDrawView.h"
+#import "WX_NongShiFu123.h"
+#import "ImGuiMem.h"
 #import "Class.h"
+#import "Config.h"
 #define kWidth  [UIScreen mainScreen].bounds.size.width
 #define kHeight [UIScreen mainScreen].bounds.size.height
 #define iPhone8P ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(1242, 2208), [[UIScreen mainScreen] currentMode].size) : NO)
 #define IPAD129 ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(2732,2048), [[UIScreen mainScreen] currentMode].size) : NO)
 
-
-
-@interface ImGuiDrawView () <MTKViewDelegate>
+@interface ImGuiMem ()
 
 @property (nonatomic, strong) MTKView *mtkView;
 @property (nonatomic, strong) id <MTLDevice> device;
@@ -24,106 +18,97 @@
 
 @end
 
-@implementation ImGuiDrawView
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view.
-    self.mtkView.device = self.device;
-    self.mtkView.delegate = self;
-    self.mtkView.clearColor = MTLClearColorMake(0, 0, 0, 0);
-    self.mtkView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0];
-    self.mtkView.clipsToBounds = YES;
-    
-    
-}
+@implementation ImGuiMem
 
-
-- (instancetype)initWithNibName:(nullable NSString *)nibNameOrNil bundle:(nullable NSBundle *)nibBundleOrNil
-{
-    
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    
-    _device = MTLCreateSystemDefaultDevice();
-    _commandQueue = [_device newCommandQueue];
-    
-    if (!self.device) abort();
-    
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    
-    ImGui::StyleColorsDark();
-    
-    
-    NSString *FontPath = @"/System/Library/Fonts/LanguageSupport/PingFang.ttc";
-    io.Fonts->AddFontFromFileTTF(FontPath.UTF8String, 40.f,NULL,io.Fonts->GetGlyphRangesChineseFull());
-    
-    
-//    ImFontConfig config;
-//    config.FontDataOwnedByAtlas = false;
-//    io.Fonts->AddFontFromMemoryTTF((void *)jijia_data, jijia_size, 16, NULL,io.Fonts->GetGlyphRangesChineseFull());
-    
-    ImGui_ImplMetal_Init(_device);
++ (instancetype)sharedInstance {
+    static ImGuiMem *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        mapx=[[NSUserDefaults standardUserDefaults] floatForKey:@"mapx"];
-        mapy=[[NSUserDefaults standardUserDefaults] floatForKey:@"mapy"];
+        小地图方框横轴=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框横轴"];
+        小地图方框大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框大小"];
         技能绘制x调节=[[NSUserDefaults standardUserDefaults] floatForKey:@"技能绘制x调节"];
         技能绘制y调节=[[NSUserDefaults standardUserDefaults] floatForKey:@"技能绘制y调节"];
-        血圈半径=[[NSUserDefaults standardUserDefaults] floatForKey:@"半径"];
+        小地图血圈大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图血圈大小"];
+        头像大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"头像大小"];
         GameCanvas.x = kWidth;
         GameCanvas.y = kHeight;
         
+        sharedInstance = [[self alloc] initWithFrame:[UIScreen mainScreen].bounds];
     });
-    
+    return sharedInstance;
+}
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        self.secureTextEntry=YES;
+        _device = MTLCreateSystemDefaultDevice();
+        _commandQueue = [_device newCommandQueue];
+        
+        if (!self.device) abort();
+        
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        
+        ImGui::StyleColorsDark();
+        //系统默认字体
+        //    NSString *FontPath = @"/System/Library/Fonts/LanguageSupport/PingFang.ttc";
+        //    io.Fonts->AddFontFromFileTTF(FontPath.UTF8String, 40.f,NULL,io.Fonts->GetGlyphRangesChineseFull());
+        //第三方字体
+        ImFontConfig config;
+        config.FontDataOwnedByAtlas = false;
+        io.Fonts->AddFontFromMemoryTTF((void *)jijia_data, jijia_size, 16, NULL,io.Fonts->GetGlyphRangesChineseFull());
+        
+        
+        //加载
+        ImGui_ImplMetal_Init(_device);
+        
+        CGFloat w = CGRectGetWidth(frame);
+        CGFloat h = CGRectGetHeight(frame);
+        self.mtkView = [[MTKView alloc] initWithFrame:CGRectMake(0, 0, w, h) device:_device];
+        self.mtkView.clearColor = MTLClearColorMake(0, 0, 0, 0);
+        self.mtkView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0];
+        self.mtkView.clipsToBounds = YES;
+        self.mtkView.delegate = self;
+        self.frame=[UIScreen mainScreen].bounds;
+        
+        [self.subviews.firstObject addSubview:self.mtkView];
+        
+        // 禁用键盘响应
+        self.userInteractionEnabled = YES;
+    }
     return self;
 }
-
-
-
-- (MTKView *)mtkView
-{
-    
-    return (MTKView *)self.view;
+- (BOOL)canBecomeFirstResponder {
+    return NO;
 }
 
-- (void)loadView
-{
+- (void)layoutSubviews {
+    [super layoutSubviews];
     
-    CGFloat w = [UIApplication sharedApplication].windows[0].rootViewController.view.frame.size.width;
-    CGFloat h = [UIApplication sharedApplication].windows[0].rootViewController.view.frame.size.height;
-    self.view = [[MTKView alloc] initWithFrame:CGRectMake(0, 0, w, h)];
+    CGFloat w = CGRectGetWidth(self.frame);
+    CGFloat h = CGRectGetHeight(self.frame);
+    self.mtkView.frame = CGRectMake(0, 0, w, h);
 }
 
 
 #pragma mark - MTKViewDelegate
 
-+(void)showHiede:(BOOL)MenDeal{
-    菜单显示状态=MenDeal;
-}
+
 - (void)drawInMTKView:(MTKView*)view
 {
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize.x = view.bounds.size.width;
     io.DisplaySize.y = view.bounds.size.height;
     
-#if TARGET_OS_OSX
-    CGFloat framebufferScale = view.window.screen.backingScaleFactor ?: NSScreen.mainScreen.backingScaleFactor;
-#else
     CGFloat framebufferScale = view.window.screen.scale ?: UIScreen.mainScreen.scale;
-#endif
-    if (iPhone8P){
-        io.DisplayFramebufferScale = ImVec2(2.60, 2.60);
-    }else{
-        io.DisplayFramebufferScale = ImVec2(framebufferScale, framebufferScale);
-    }
-    
+    io.DisplayFramebufferScale = ImVec2(framebufferScale, framebufferScale);
     io.DeltaTime = 1 / float(view.preferredFramesPerSecond ?: 60);
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
-    
-    
     
     MTLRenderPassDescriptor* renderPassDescriptor = view.currentRenderPassDescriptor;
     if (renderPassDescriptor != nil)
@@ -135,10 +120,10 @@
         ImGui::NewFrame();
         
         [self 菜单];
-        
         //开始绘制==========================
         ImDrawList*MsDrawList = ImGui::GetForegroundDrawList();//读取整个菜单元素
-        [self Drawing:MsDrawList];
+        [self 绘制:MsDrawList];
+        
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
         ImGui_ImplMetal_RenderDrawData(draw_data, commandBuffer, renderEncoder);
@@ -150,6 +135,7 @@
     }
     [commandBuffer commit];
 }
+
 #pragma mark - 封装绘制函数===
 //绘制扇形
 static void DrawSector(ImDrawList* drawList, const ImVec2& center, float radius, float fromAngle, float toAngle, ImU32 color, int num_segments, bool fill, float thickness)
@@ -200,45 +186,21 @@ static void DrawText(ImDrawList* drawList, const char* text, float font_size, co
     drawList->AddText(ImGui::GetFont(), font_size, text_pos, color, text);
 }
 
-#pragma mark 绘制=======
-//声明默认开关和 状态
-static ImVec4 血条颜色 = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-static ImVec4 方框颜色 = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-static ImVec4 射线颜色 = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-static ImVec4 野怪颜色 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-static ImVec4 回城血条颜色 = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
-bool 菜单显示状态;
-bool 透视开关,全开,技能开关,技能倒计时开关,野怪绘制开关,血条开关,方框开关,射线开关,兵线,野怪倒计时开关,绘制过直播开关;
-float mapx,mapy,技能绘制x调节,技能绘制y调节,血圈半径;
-
-static Vector2 GameCanvas;
-static int YXsum = 0;
-std::vector<SaveImage> NetImage;
-
-
+#pragma mark - IMGUI菜单
+char 输入框内容[256] = "";
 - (void)菜单{
-    if (菜单显示状态) {
-        //菜单显示时 交互为YES可点击
-        [self.view setUserInteractionEnabled:YES];
-    } else{
-        //菜单显示时 交互为NO 不可可点击
-        [self.view setUserInteractionEnabled:NO];
-        //跨进程旋转屏幕
-    }
-    ImFont* font = ImGui::GetFont();
-    font->Scale = 17.f / font->FontSize;//字体 大小 分辨率
+    
     //默认窗口大小
     CGFloat width =350;//宽度
     CGFloat height =310;//高度
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);//大小
-    
     //默认显示位置 屏幕中央
     CGFloat x = (([UIApplication sharedApplication].windows[0].rootViewController.view.frame.size.width) - width) / 2;
     CGFloat y = (([UIApplication sharedApplication].windows[0].rootViewController.view.frame.size.height) - height) / 2;
     
     ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);//默认位置
-    
+    [self setUserInteractionEnabled:菜单显示状态];//当菜单显示时候允许搜索 隐藏时禁用手势;
     //开始菜单=====================
     if (菜单显示状态) {
         
@@ -250,7 +212,6 @@ std::vector<SaveImage> NetImage;
         if (ImGui::BeginTabItem("绘制功能")) // 开始第一个选项卡
         {
             // 在这里添加第一个选项卡的内容
-            
             ImGui::Checkbox("透视总开关", &透视开关);
             ImGui::SameLine();
             if (ImGui::Checkbox("全开", &全开)) {
@@ -262,6 +223,10 @@ std::vector<SaveImage> NetImage;
                 方框开关=全开;
                 射线开关=全开;
                 血条开关=全开;
+            }
+            ImGui::SameLine();
+            if(ImGui::Checkbox("过直播开关", &绘制过直播开关)){
+                self.secureTextEntry=绘制过直播开关;
             }
             
             ImGui::Checkbox("技能", &技能开关);
@@ -292,18 +257,21 @@ std::vector<SaveImage> NetImage;
         if (ImGui::BeginTabItem("高级功能")) // 开始第二个选项卡
         {
             // 在这里添加第二个选项卡的内容
-            ImGui::Checkbox("过直播开关", &绘制过直播开关);
+            
             ImGui::NewLine();
             
-            if (ImGui::SliderFloat("小地图血圈半径", &血圈半径, 0, 80)) {
-                [[NSUserDefaults standardUserDefaults] setFloat:血圈半径 forKey:@"半径"];
+            if (ImGui::SliderFloat("小地图血圈大小", &小地图血圈大小, 0, 80)) {
+                [[NSUserDefaults standardUserDefaults] setFloat:        小地图血圈大小 forKey:@"小地图血圈大小"];
+            }
+            if (ImGui::SliderFloat("头像大小", &头像大小, 0, 80)) {
+                [[NSUserDefaults standardUserDefaults] setFloat:头像大小 forKey:@"头像大小"];
             }
             
-            if (ImGui::SliderFloat("小地图横轴", &mapx, 0, 500)) {
-                [[NSUserDefaults standardUserDefaults] setFloat:mapx forKey:@"mapx"];
+            if (ImGui::SliderFloat("小地图横轴", &小地图方框横轴, 0, 500)) {
+                [[NSUserDefaults standardUserDefaults] setFloat:小地图方框横轴 forKey:@"小地图方框横轴"];
             }
-            if (ImGui::SliderFloat("小地图大小", &mapy, 0, 500)) {
-                [[NSUserDefaults standardUserDefaults] setFloat:mapy forKey:@"mapy"];
+            if (ImGui::SliderFloat("小地图方框大小", &小地图方框大小, 0, 500)) {
+                [[NSUserDefaults standardUserDefaults] setFloat:小地图方框大小 forKey:@"小地图方框大小"];
             }
             
            
@@ -319,19 +287,122 @@ std::vector<SaveImage> NetImage;
             ImGui::EndTabItem();
         }
         
-        if (ImGui::BeginTabItem("其他功能")) // 开始第二个选项卡
+        if (ImGui::BeginTabItem("卡密验证")) // 开始第二个选项卡
         {
-            ImGui::Text("人生如戏-全靠演技\n到期时间:2099-01-01 22:55:77\n\n\n");
+            ImGui::NewLine();
+            //版本========
+            static NSString*str;
+            if (![软件版本号 isEqual:JN_VERSION]) {
+                str=[NSString stringWithFormat:@"发现新版:%@-更新新版",软件版本号];
+                const char* banbemstr = strdup([str UTF8String]);
+                if (ImGui::Button(banbemstr)) {
+                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件url地址] options:@{} completionHandler:^(BOOL success) {
+                        
+                    }];
+                }
+            }else{
+                str=[NSString stringWithFormat:@"已是最新版:%@",JN_VERSION];
+                const char* banbemstr = strdup([str UTF8String]);
+                ImGui::Button(banbemstr);
+            }
+            
+            //公告========
+            const char* ggstr = strdup([软件公告 UTF8String]);
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s",ggstr);
+            
+            //验证菜单=====
+            if (!验证状态) {
+                bool validated = false;
+                ImGui::Text("请先验证");
+                ImGui::Text("%s", [验证信息 UTF8String]);
+                ImGui::Text("卡密:%s", [卡密 UTF8String]);
+                if (ImGui::Button("复制卡密")) {
+                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+                    pasteboard.string=卡密;
+                }
+                ImGui::NewLine();
+                // 输入框
+                ImGui::InputText("##input", 输入框内容, sizeof(输入框内容));
+                
+                // 粘贴按钮
+                if (ImGui::Button("粘贴")) {
+                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+                    NSString *text = pasteboard.string;
+                    if (text != nil) {
+                        NSLog(@"粘贴=%@",text);
+                        strncpy(输入框内容, text.UTF8String, sizeof(输入框内容));
+                        ImGui::SetNextItemWidth(-1);
+                        ImGui::InputText("##input", 输入框内容, sizeof(输入框内容));
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("清除")) {
+                    strncpy(输入框内容, @"".UTF8String, sizeof(输入框内容));
+                    
+                }
+                ImGui::SameLine();
+                
+                ImGui::SameLine();
+                
+                // 确认按钮
+                if (ImGui::Button("确认激活")) {
+                    validated = true;
+                    if (validated) {
+                        validated = false;
+                        // 验证通过的逻辑
+                        卡密 = [NSString stringWithUTF8String:输入框内容];
+                        [[WX_NongShiFu123 alloc] yanzhengAndUseIt:卡密];
+                       
+                    }
+                }
+                if(软件网页地址.length>5){
+                    ImGui::SameLine();
+                    if (ImGui::Button("购买卡密")) {
+                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
+                            exit(0);
+                        }];
+                        
+                    }
+                }
+                
+                
+            }else{
+                
+                const char* kmcstr = strdup([卡密 UTF8String]);
+                
+                ImGui::Text("卡密:%s",kmcstr);
+                if (ImGui::Button("复制本地卡密")) {
+                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+                    pasteboard.string=卡密;
+                    
+                }
+                ImGui::SameLine();
+                if(软件网页地址.length>5){
+                    ImGui::SameLine();
+                    if (ImGui::Button("购买卡密")) {
+                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
+                            
+                        }];
+                        
+                    }
+                }
+                ImGui::NewLine();
+                
+            }
+            
+            
+            ImGui::NextColumn();
             ImGui::EndTabItem();
         }
         
-        
         ImGui::EndTabBar(); // 结束选项卡栏
         
+        const char* cstr = strdup([到期时间 UTF8String]);
+        ImVec4 color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // 红色
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        ImGui::Text("到期时间:%s (%.1f FPS)", cstr,ImGui::GetIO().Framerate);
         
-        
-        ImGui::Text("QQ:350722326 %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        
+        ImGui::PopStyleColor();
         
         
         ImGui::End();
@@ -339,7 +410,24 @@ std::vector<SaveImage> NetImage;
         
     }
 }
-- (void) Drawing:(ImDrawList*)MsDrawList
+
+#pragma mark - 声明默认开关和 状态
+//声明默认开关和 状态
+static ImVec4 血条颜色 = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+static ImVec4 方框颜色 = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+static ImVec4 射线颜色 = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+static ImVec4 野怪颜色 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+static ImVec4 回城血条颜色 = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+
+bool 菜单显示状态;
+bool 透视开关,全开,技能开关,技能倒计时开关,野怪绘制开关,血条开关,方框开关,射线开关,兵线,野怪倒计时开关,绘制过直播开关;
+float 小地图方框横轴,小地图方框大小,技能绘制x调节,技能绘制y调节,        小地图血圈大小,头像大小;
+
+static Vector2 GameCanvas;
+static int YXsum = 0;
+std::vector<SaveImage> NetImage;
+#pragma mark - 绘制=====
+- (void)绘制:(ImDrawList*)MsDrawList
 {
     if (透视开关)
     {
@@ -347,7 +435,7 @@ std::vector<SaveImage> NetImage;
         Gameinitialization();
         //左上角地图方框
         if (方框开关) {
-            MsDrawList->AddRect(ImVec2(mapx,0), ImVec2(mapx+mapy,mapy), ImColor(方框颜色));
+            MsDrawList->AddRect(ImVec2(小地图方框横轴,0), ImVec2(小地图方框横轴+小地图方框大小,小地图方框大小), ImColor(方框颜色));
         }
         
         if (RefreshMatrix())
@@ -366,25 +454,27 @@ std::vector<SaveImage> NetImage;
                         {
                             //小地图头像
                             Vector2 小地图;
-                            小地图.x=mapx;
-                            小地图.y=mapy;
+                            小地图.x=小地图方框横轴;
+                            小地图.y=小地图方框大小;
                             //小地图头像
                             Vector2 MiniPos = ToMiniMap(小地图, 读取英雄数据[i].Pos);
-                            float R=小地图.y/14;
+                            
                             
                             // 绘制小地图玩家图像
                             id<MTLTexture> 头像ID=GetHeroImage(读取英雄数据[i].英雄ID, 0);
                             bool isplays=IsPlays(读取英雄数据[i].英雄ID);
                             if (!isplays) continue;//跳过假坐标
+                            
+                            
+                            //小地血圈圈条
                             if(血条开关)
                             {
-                                //小地血圈圈条
                                 float 血量 =读取英雄数据[i].HP;
                                 //小地血血背景
-                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y), 血圈半径, 0, 360, ImColor(1,1,1), 32,false,血圈半径/7);
+                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),         小地图血圈大小, 0, 360, ImColor(1,1,1), 32,false,        小地图血圈大小/7);
                                 
                                 //小地血血条 回城黄色
-                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y), 血圈半径, 0, 360*血量, 读取英雄数据[i].回城?ImColor(回城血条颜色):ImColor(血条颜色), 32,true,血圈半径/8);
+                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),         小地图血圈大小, 0, 360*血量, 读取英雄数据[i].回城?ImColor(回城血条颜色):ImColor(血条颜色), 32,true,        小地图血圈大小/8);
                                 
                                 
                                 //大地图血条背景
@@ -394,8 +484,8 @@ std::vector<SaveImage> NetImage;
                             }
                             // 绘制小地图玩家图像
                             if (头像ID != NULL) {
-                                ImVec2 pMin = ImVec2(MiniPos.x-R, MiniPos.y-R);
-                                ImVec2 pMax = ImVec2(MiniPos.x+R, MiniPos.y+R);
+                                ImVec2 pMin = ImVec2(MiniPos.x-头像大小, MiniPos.y-头像大小);
+                                ImVec2 pMax = ImVec2(MiniPos.x+头像大小, MiniPos.y+头像大小);
                                 MsDrawList->AddImage((__bridge ImTextureID)头像ID, pMin, pMax);
                             }
                             
@@ -452,6 +542,10 @@ std::vector<SaveImage> NetImage;
                                     MsDrawList->AddImage((__bridge ImTextureID)texture1ID, pMin, pMax);
                                 }
                                 
+                            }else{
+                                //4个小点上的倒计时
+//                                const char *str=[NSString stringWithFormat:@"%d", (读取英雄数据[i].技能1倒计时)].UTF8String;
+//                                DrawText(MsDrawList, str, 20, ImVec2(x, y+20), ImColor(方框颜色), true);
                             }
                             if (读取英雄数据[i].Skill2) {
                                 
@@ -463,6 +557,10 @@ std::vector<SaveImage> NetImage;
                                     MsDrawList->AddImage((__bridge ImTextureID)texture2ID, pMin, pMax);
                                 }
                                 
+                            }else{
+                                //4个小点上的倒计时
+//                                const char *str=[NSString stringWithFormat:@"%d", (读取英雄数据[i].技能2倒计时)].UTF8String;
+//                                DrawText(MsDrawList, str ,20, ImVec2(x+圆圈大小, y+20), ImColor(方框颜色), true);
                             }
                             if (读取英雄数据[i].Skill3) {
                                 
@@ -480,12 +578,15 @@ std::vector<SaveImage> NetImage;
                             if (读取英雄数据[i].Skill4) {
                                
                                 // 绘制小地图玩家图像
-                                id<MTLTexture> texture4ID = GetHeroImage(读取英雄数据[i].HeroTalent, 0);
+                                id<MTLTexture> texture4ID = GetHeroImage(读取英雄数据[i].召唤师技能ID, 0);
                                 if (texture4ID != NULL) {
                                     ImVec2 pMin = ImVec2(x+圆圈大小*3-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小*3+圆圈大小/2, y+20+圆圈大小/2);
                                     MsDrawList->AddImage((__bridge ImTextureID)texture4ID, pMin, pMax);
                                 }
+                            }else{
+                                //4个小点上的倒计时
+                                DrawText(MsDrawList, 召唤师技能倒计时文字, 20, ImVec2(x+圆圈大小*3, y+20), ImColor(方框颜色), true);
                             }
                             
                         }
@@ -501,7 +602,7 @@ std::vector<SaveImage> NetImage;
                                 MsDrawList->AddImage((__bridge ImTextureID)头像ID, pMin, pMax);
                             }
                             //召唤师图标
-                            id<MTLTexture> DZtextureID = GetHeroImage(读取英雄数据[i].HeroTalent, 0);
+                            id<MTLTexture> DZtextureID = GetHeroImage(读取英雄数据[i].召唤师技能ID, 0);
                             if (DZtextureID != NULL) {
                                 ImVec2 DZpMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 技能绘制y调节+10);
                                 ImVec2 DZpMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节*2+10);
@@ -516,9 +617,7 @@ std::vector<SaveImage> NetImage;
                             //绘制大招时间
                             DrawText(MsDrawList, 大招倒计时文字, 字体大小, ImVec2(字体x,字体y), ImColor(方框颜色), true);
                             //绘制技能时间
-                            DrawText(MsDrawList, 召唤师技能倒计时文字, 字体大小, ImVec2(字体x,字体y+30), ImColor(方框颜色), true);
-                            
-                            
+                            DrawText(MsDrawList, 召唤师技能倒计时文字, 字体大小, ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节/2, 技能绘制y调节*2+10-技能绘制y调节/2), ImColor(血条颜色), true);
                             
                         }
                         
@@ -542,8 +641,8 @@ std::vector<SaveImage> NetImage;
                         if (ToScreen(GameCanvas,野怪数据[i].MonsterPos,&MonsterScreen)){
                             //小地图野怪
                             Vector2 小地图;
-                            小地图.x=mapx;
-                            小地图.y=mapy;
+                            小地图.x=小地图方框横轴;
+                            小地图.y=小地图方框大小;
                             Vector2 MiniMonsterPos = ToMiniMap(小地图, 野怪数据[i].MonsterPos);
                             
                             //小地图野怪背景
@@ -581,8 +680,8 @@ std::vector<SaveImage> NetImage;
                 for (int i=0; i<野怪倒计时数据.size(); i++) {
                     
                     Vector2 小地图;
-                    小地图.x=mapx;
-                    小地图.y=mapy;
+                    小地图.x=小地图方框横轴;
+                    小地图.y=小地图方框大小;
                     Vector2 MiniMonsterPos = ToMiniMap(小地图, 野怪倒计时数据[i].MonsterPos);
                     const char *倒计时文字;
                     倒计时文字 = [NSString stringWithFormat:@"%d", (野怪倒计时数据[i].野怪倒计时)].UTF8String;
@@ -681,7 +780,7 @@ static bool IsPlays(int HeroID)
 - (void)updateIOWithTouchEvent:(UIEvent *)event
 {
     UITouch *anyTouch = event.allTouches.anyObject;
-    CGPoint touchLocation = [anyTouch locationInView:self.view];
+    CGPoint touchLocation = [anyTouch locationInView:self];
     
     ImGuiIO &io = ImGui::GetIO();
     io.MousePos = ImVec2(touchLocation.x, touchLocation.y);
@@ -719,6 +818,5 @@ static bool IsPlays(int HeroID)
 {
     [self updateIOWithTouchEvent:event];
 }
-
 @end
 

@@ -38,8 +38,10 @@ struct Matrix
 struct SmobaHeroData{
     float HP;
     int 英雄ID;
+    int 技能1倒计时;
+    int 技能2倒计时;
     int 大招倒计时;
-    int HeroTalent;
+    int 召唤师技能ID;
     int 召唤师技能倒计时;
     bool 回城;
     int HeroTeam;

@@ -145,10 +145,10 @@ static int32_t GetGameMaxHP(long Target){
 //英雄ID
 static int GetPlayerHero(long Target)
 {
-    return Read_Int(Target+0x28);//影响id
+    return Read_Int(Target+0x28);
 }
 
-//召唤师时间
+//召唤师倒计时时间
 static int GetPlayerHeroTalentTime(long Target){
     long PlayerTime1 = Read_Long(Target+ 0x110);
     long PlayerTime2 = Read_Long(PlayerTime1+ 0x150);
@@ -156,20 +156,33 @@ static int GetPlayerHeroTalentTime(long Target){
     int PlayerTime4 = Read_Int(PlayerTime3+ 0x38);
     return (PlayerTime4 / 8192000);
 }
-//召唤师技能
+//召唤师技能ID
 static int GetPlayerHeroTalent(long Target){
     long PlayerData1 = Read_Long(Target+ 0x110);
     long PlayerData2 = Read_Long(PlayerData1+ 0x150);
     return Read_Int(PlayerData2+ 0x330);
 }
 
-//大招偏移
+//大招倒计时
 static int GetGetHeroSkillTime(long Target){
     long Target_P1 = Read_Long(Target + 0x110);
     long Target_P2 = Read_Long(Target_P1 + 0x108);
     long Target_P3 = Read_Long(Target_P2 + 0xA0);
     int Target_P4 = Read_Int(Target_P3 + 0x38);
     int HeroSkillTime = Target_P4/8192000;
+    return HeroSkillTime;
+}
+//1技能时间
+static int GetGetHero1SkillTime(long Target){
+    int Target_P1 = Read_Int(Target + 0x110);
+    int HeroSkillTime = Target_P1/8192000;
+    return HeroSkillTime;
+}
+//2技能时间
+static int GetGetHero2SkillTime(long Target){
+    long Target_P1 = Read_Int(Target + 0x110);
+    int Target_P2 = Read_Int(Target_P1 + 0x108);
+    int HeroSkillTime = Target_P2/8192000;
     return HeroSkillTime;
 }
 //回城
@@ -192,7 +205,6 @@ void GetPlayers(std::vector<SmobaHeroData> *Players)
         int ArraySize = *(int*)(PDatas+0x7C);
         if (ArraySize > 0 && ArraySize <= 20)
         {
-            
             for (int i=0; i < ArraySize; i++) {
                 long P_player = *(long*)(Array+i*0x18);
                 if (P_player > Imageaddress){
@@ -204,8 +216,10 @@ void GetPlayers(std::vector<SmobaHeroData> *Players)
                     HeroData.HeroMaxHP = GetGameMaxHP(P_player);
                     HeroData.Pos = GetPlayerPos(P_player);
                     HeroData.HP = GetPlayerHP(P_player);
+                    HeroData.技能1倒计时 = GetGetHero1SkillTime(P_player);
+                    HeroData.技能2倒计时 = GetGetHero2SkillTime(P_player);
                     HeroData.大招倒计时 = GetGetHeroSkillTime(P_player);
-                    HeroData.HeroTalent = GetPlayerHeroTalent(P_player);
+                    HeroData.召唤师技能ID = GetPlayerHeroTalent(P_player);
                     HeroData.召唤师技能倒计时 = GetPlayerHeroTalentTime(P_player);
                     HeroData.回城 = GetHeroBack(P_player);
                     GetHeroSkill(P_player,&HeroData.Skill1,&HeroData.Skill2,&HeroData.Skill3,&HeroData.Skill4);
