@@ -38,6 +38,7 @@ static PubgLoad *extraInfo;
 
 - (void)volumeChanged {
     菜单显示状态=!菜单显示状态;
+    
     [[UIApplication sharedApplication].keyWindow addSubview:[ImGuiMem sharedInstance]];//imgui 添加到顶层视图
 
 }
