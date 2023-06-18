@@ -172,19 +172,7 @@ static int GetGetHeroSkillTime(long Target){
     int HeroSkillTime = Target_P4/8192000;
     return HeroSkillTime;
 }
-//1技能时间
-static int GetGetHero1SkillTime(long Target){
-    int Target_P1 = Read_Int(Target + 0x110);
-    int HeroSkillTime = Target_P1/8192000;
-    return HeroSkillTime;
-}
-//2技能时间
-static int GetGetHero2SkillTime(long Target){
-    long Target_P1 = Read_Int(Target + 0x110);
-    int Target_P2 = Read_Int(Target_P1 + 0x108);
-    int HeroSkillTime = Target_P2/8192000;
-    return HeroSkillTime;
-}
+
 //回城
 static bool GetHeroBack(long Target){
     long GoBack_1 = Read_Long(Target+0x110);
@@ -193,6 +181,7 @@ static bool GetHeroBack(long Target){
     int GoBack = Read_Int(GoBack_3+0x20);
     return GoBack==1; //返回是否为1 为1回城不为1正常
 }
+
 void GetPlayers(std::vector<SmobaHeroData> *Players)
 {
     Players->clear();
@@ -216,8 +205,6 @@ void GetPlayers(std::vector<SmobaHeroData> *Players)
                     HeroData.HeroMaxHP = GetGameMaxHP(P_player);
                     HeroData.Pos = GetPlayerPos(P_player);
                     HeroData.HP = GetPlayerHP(P_player);
-                    HeroData.技能1倒计时 = GetGetHero1SkillTime(P_player);
-                    HeroData.技能2倒计时 = GetGetHero2SkillTime(P_player);
                     HeroData.大招倒计时 = GetGetHeroSkillTime(P_player);
                     HeroData.召唤师技能ID = GetPlayerHeroTalent(P_player);
                     HeroData.召唤师技能倒计时 = GetPlayerHeroTalentTime(P_player);
@@ -232,6 +219,66 @@ void GetPlayers(std::vector<SmobaHeroData> *Players)
         
     }
 }
+static Vector2 MsMonsterLocFun(int offset){
+    Vector2 loc;//蓝方
+    if(offset == 0){//蓝Buff
+        loc.x = -23.14;
+        loc.y = 1.3;
+    }else if(offset == 24){//红Buff
+        loc.x = 2.588;
+        loc.y = -30;
+    }else if(offset == 264){//蜥蜴
+        loc.x = -36.16;
+        loc.y = 4.495;
+    }else if(offset == 288){//穿山甲
+        loc.x = -33.252;
+        loc.y = 20;
+    }else if(offset == 312){//猪
+        loc.x = -3.657;
+        loc.y = -18.733;
+    }else if(offset == 336){//鸟
+        loc.x = 16.74;
+        loc.y = -36.072;
+    }else if(offset == 240){//狼
+        loc.x = -30.266;
+        loc.y = -9.662;
+    }else if(offset == 48){//==红方===蓝BUFF
+        loc.x = 23.151;
+        loc.y = -0.846;
+    }else if(offset == 72){//红BUFF
+        loc.x = -2.427;
+        loc.y = 29.948;
+    }else if(offset == 384){//蜥蜴
+        loc.x = 36.371;
+        loc.y = -4.302;
+    }else if(offset == 408){//穿山甲
+        loc.x = 33.173;
+        loc.y = -20.75;
+    }else if(offset == 432){//猪
+        loc.x = 3.655;;
+        loc.y = 18.843;
+    }else if(offset == 456){//鸟
+        loc.x = -16.649;
+        loc.y = 35.984;
+    }else if(offset == 360){//狼
+        loc.x = 30.266;
+        loc.y = 9.662;
+    }else if(offset == 192){//上路河道精灵
+        loc.x = -34.09;
+        loc.y = 34.09;
+    }else if(offset == 216){//下路河道精灵
+        loc.x = 35.5;
+        loc.y = -35.5;
+    }else if(offset == 536){//上路河道精灵
+        loc.x = -34.09;
+        loc.y = 34.09;
+    }else if(offset == 664){//下路河道精灵
+        loc.x = 35.5;
+        loc.y = -35.5;
+    }
+    
+    return loc;
+}
 //野怪
 void GetMonster(std::vector<SmobaMonsterData> *野怪数据)
 {
@@ -242,7 +289,7 @@ void GetMonster(std::vector<SmobaMonsterData> *野怪数据)
         
         long Monster_Data = *(long*)(PDatas+0x148);
         int Monster_Count = *(int*)(PDatas+0x164);
-        NSLog(@"Monster_Count=%d",Monster_Count);
+        
         for (int i=0; i < Monster_Count; i++) {
             SmobaMonsterData Monster;
             long P_Monster = *(long*)(Monster_Data+i*0x18);

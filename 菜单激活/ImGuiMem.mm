@@ -35,9 +35,11 @@
         GameCanvas.y = kHeight;
         
         sharedInstance = [[self alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        
     });
     return sharedInstance;
 }
+
 - (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
@@ -79,9 +81,11 @@
         
         // 禁用键盘响应
         self.userInteractionEnabled = YES;
+        
     }
     return self;
 }
+
 - (BOOL)canBecomeFirstResponder {
     return NO;
 }
@@ -185,7 +189,10 @@ static void DrawText(ImDrawList* drawList, const char* text, float font_size, co
     // 绘制文本
     drawList->AddText(ImGui::GetFont(), font_size, text_pos, color, text);
 }
-
+static void DrawImage(ImDrawList* drawList,id<MTLTexture> ImageID,const ImVec2& 起点 , const ImVec2& 终点){
+    if (ImageID ==NULL) return;
+    drawList->AddImage((__bridge ImTextureID)ImageID, 起点, 终点);
+}
 
 #pragma mark - IMGUI菜单
 char 输入框内容[256] = "";
@@ -425,6 +432,7 @@ float 小地图方框横轴,小地图方框大小,技能绘制x调节,技能绘�
 
 static Vector2 GameCanvas;
 static int YXsum = 0;
+
 std::vector<SaveImage> NetImage;
 #pragma mark - 绘制=====
 - (void)绘制:(ImDrawList*)MsDrawList
@@ -452,29 +460,24 @@ std::vector<SaveImage> NetImage;
                     {
                         if (ToScreen(GameCanvas,读取英雄数据[i].Pos,&BoxPos))
                         {
+                            if (读取英雄数据[i].英雄ID ==0) continue;
                             //小地图头像
                             Vector2 小地图;
                             小地图.x=小地图方框横轴;
                             小地图.y=小地图方框大小;
                             //小地图头像
                             Vector2 MiniPos = ToMiniMap(小地图, 读取英雄数据[i].Pos);
-                            
-                            
                             // 绘制小地图玩家图像
-                            id<MTLTexture> 头像ID=GetHeroImage(读取英雄数据[i].英雄ID, 0);
-                            bool isplays=IsPlays(读取英雄数据[i].英雄ID);
-                            if (!isplays) continue;//跳过假坐标
-                            
                             
                             //小地血圈圈条
                             if(血条开关)
                             {
                                 float 血量 =读取英雄数据[i].HP;
                                 //小地血血背景
-                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),         小地图血圈大小, 0, 360, ImColor(1,1,1), 32,false,        小地图血圈大小/7);
+                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),小地图血圈大小, 0, 360, ImColor(1,1,1), 32,false,小地图血圈大小/7);
                                 
                                 //小地血血条 回城黄色
-                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),         小地图血圈大小, 0, 360*血量, 读取英雄数据[i].回城?ImColor(回城血条颜色):ImColor(血条颜色), 32,true,        小地图血圈大小/8);
+                                DrawSector(MsDrawList, ImVec2(MiniPos.x,MiniPos.y),小地图血圈大小, 0, 360*血量, 读取英雄数据[i].回城?ImColor(回城血条颜色):ImColor(血条颜色), 32,true,        小地图血圈大小/8);
                                 
                                 
                                 //大地图血条背景
@@ -483,11 +486,12 @@ std::vector<SaveImage> NetImage;
                                 MsDrawList->AddRectFilled(ImVec2(BoxPos.x-20, BoxPos.y+1), ImVec2(BoxPos.x-20+血量*40, BoxPos.y+10), ImColor(血条颜色));
                             }
                             // 绘制小地图玩家图像
-                            if (头像ID != NULL) {
+                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 0, ^(id<MTLTexture> texture) {
                                 ImVec2 pMin = ImVec2(MiniPos.x-头像大小, MiniPos.y-头像大小);
                                 ImVec2 pMax = ImVec2(MiniPos.x+头像大小, MiniPos.y+头像大小);
-                                MsDrawList->AddImage((__bridge ImTextureID)头像ID, pMin, pMax);
-                            }
+                                DrawImage(MsDrawList, texture, pMin,pMax);
+                            });
+                           
                             
                         }
                         if (射线开关) {
@@ -498,9 +502,6 @@ std::vector<SaveImage> NetImage;
                         {
                             MsDrawList->AddRect(ImVec2(BoxPos.x-20, BoxPos.y-50), ImVec2(BoxPos.x+20, BoxPos.y+10), ImColor(方框颜色));
                         }
-                        //方框下面的技能点
-                        
-                        
                         //大招技能时间显示
                         const char *召唤师技能倒计时文字;
                         const char *大招倒计时文字;
@@ -533,60 +534,43 @@ std::vector<SaveImage> NetImage;
                             
                             //图片圆圈
                             if (读取英雄数据[i].Skill1) {
+                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 1, ^(id<MTLTexture> texture) {
+                                   ImVec2 pMin = ImVec2(x-圆圈大小/2, y+20-圆圈大小/2);
+                                   ImVec2 pMax = ImVec2(x+圆圈大小/2, y+20+圆圈大小/2);
+                                   DrawImage(MsDrawList, texture, pMin,pMax);
+                                });
                                 
-                                // 绘制小地图玩家图像
-                                id<MTLTexture> texture1ID = GetHeroImage(读取英雄数据[i].英雄ID, 1);
-                                if (texture1ID != NULL) {
-                                    ImVec2 pMin = ImVec2(x-圆圈大小/2, y+20-圆圈大小/2);
-                                    ImVec2 pMax = ImVec2(x+圆圈大小/2, y+20+圆圈大小/2);
-                                    MsDrawList->AddImage((__bridge ImTextureID)texture1ID, pMin, pMax);
-                                }
-                                
-                            }else{
-                                //4个小点上的倒计时
-//                                const char *str=[NSString stringWithFormat:@"%d", (读取英雄数据[i].技能1倒计时)].UTF8String;
-//                                DrawText(MsDrawList, str, 20, ImVec2(x, y+20), ImColor(方框颜色), true);
                             }
                             if (读取英雄数据[i].Skill2) {
-                                
-                                // 绘制小地图玩家图像
-                                id<MTLTexture> texture2ID = GetHeroImage(读取英雄数据[i].英雄ID, 2);
-                                if (texture2ID != NULL) {
-                                    ImVec2 pMin = ImVec2(x+圆圈大小-圆圈大小/2, y+20-圆圈大小/2);
+                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 2, ^(id<MTLTexture> texture) {
+                                   ImVec2 pMin = ImVec2(x+圆圈大小-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小+圆圈大小/2, y+20+圆圈大小/2);
-                                    MsDrawList->AddImage((__bridge ImTextureID)texture2ID, pMin, pMax);
-                                }
-                                
-                            }else{
-                                //4个小点上的倒计时
-//                                const char *str=[NSString stringWithFormat:@"%d", (读取英雄数据[i].技能2倒计时)].UTF8String;
-//                                DrawText(MsDrawList, str ,20, ImVec2(x+圆圈大小, y+20), ImColor(方框颜色), true);
+                                    DrawImage(MsDrawList, texture, pMin,pMax);
+                                });
+                               
                             }
                             if (读取英雄数据[i].Skill3) {
-                                
-                                // 绘制小地图玩家图像
-                                id<MTLTexture> texture3ID = GetHeroImage(读取英雄数据[i].英雄ID, 3);
-                                if (texture3ID != NULL) {
+                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 3, ^(id<MTLTexture> texture) {
                                     ImVec2 pMin = ImVec2(x+圆圈大小*2-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小*2+圆圈大小/2, y+20+圆圈大小/2);
-                                    MsDrawList->AddImage((__bridge ImTextureID)texture3ID, pMin, pMax);
-                                }
+                                    DrawImage(MsDrawList, texture, pMin,pMax);
+                                });
+                               
                             }else{
                                 //4个小点上的倒计时
-                                DrawText(MsDrawList, 大招倒计时文字, 20, ImVec2(x+圆圈大小*2, y+20), ImColor(方框颜色), true);
+                                DrawText(MsDrawList, 大招倒计时文字, 12, ImVec2(x+圆圈大小*2, y+20), ImColor(方框颜色), true);
                             }
                             if (读取英雄数据[i].Skill4) {
-                               
-                                // 绘制小地图玩家图像
-                                id<MTLTexture> texture4ID = GetHeroImage(读取英雄数据[i].召唤师技能ID, 0);
-                                if (texture4ID != NULL) {
+                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 4, ^(id<MTLTexture> texture) {
                                     ImVec2 pMin = ImVec2(x+圆圈大小*3-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小*3+圆圈大小/2, y+20+圆圈大小/2);
-                                    MsDrawList->AddImage((__bridge ImTextureID)texture4ID, pMin, pMax);
-                                }
+                                    DrawImage(MsDrawList, texture, pMin,pMax);
+                                });
+                                
+                                
                             }else{
                                 //4个小点上的倒计时
-                                DrawText(MsDrawList, 召唤师技能倒计时文字, 20, ImVec2(x+圆圈大小*3, y+20), ImColor(方框颜色), true);
+                                DrawText(MsDrawList, 召唤师技能倒计时文字, 12, ImVec2(x+圆圈大小*3, y+20), ImColor(方框颜色), true);
                             }
                             
                         }
@@ -595,23 +579,27 @@ std::vector<SaveImage> NetImage;
                         if (技能倒计时开关) {
                             YXsum++;
                             // 绘制图玩家图像
-                            id<MTLTexture> 头像ID = GetHeroImage(读取英雄数据[i].英雄ID, 0);
-                            if (头像ID !=NULL) {
+                            
+                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 0, ^(id<MTLTexture> texture) {
                                 ImVec2 pMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 0);
                                 ImVec2 pMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节);
-                                MsDrawList->AddImage((__bridge ImTextureID)头像ID, pMin, pMax);
-                            }
+                                DrawImage(MsDrawList, texture, pMin ,pMax);
+                            });
+                            
+                            
                             //召唤师图标
-                            id<MTLTexture> DZtextureID = GetHeroImage(读取英雄数据[i].召唤师技能ID, 0);
-                            if (DZtextureID != NULL) {
+                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 4, ^(id<MTLTexture> texture) {
+                                if (texture==NULL) {
+                                    NSLog(@"空的=%d  %d",读取英雄数据[i].英雄ID,读取英雄数据[i].召唤师技能ID);
+                                }
                                 ImVec2 DZpMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 技能绘制y调节+10);
                                 ImVec2 DZpMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节*2+10);
-                                MsDrawList->AddImage((__bridge ImTextureID)DZtextureID, DZpMin, DZpMax);
-                            }
+                                DrawImage(MsDrawList, texture, DZpMin ,DZpMax);
+                            });
+                            
+                            
                            
-                            
-                            
-                            float 字体大小= 技能绘制y调节/1.5;
+                            float 字体大小= 技能绘制y调节/2;
                             float 字体x = 技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节/2;
                             float 字体y = 技能绘制y调节/2;
                             //绘制大招时间
@@ -697,85 +685,121 @@ std::vector<SaveImage> NetImage;
 }
 
 #pragma mark 读取玩家头像
-//绘制图片
-static id<MTLTexture> getTextureID(UIImage *image) {
-    CGImageRef cgImage = [image CGImage];
-    if (!cgImage) {
-        NSLog(@"无法从图像数据创建 CGImage");
-        return NULL;
-    }
-    // Create a MTLTexture from the UIImage
+//读取纹理ID NSData形式
+static id<MTLTexture> loadImageTexture(NSData *imageData){
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    void *data= (void*)[imageData bytes];
+    NSUInteger length = [imageData length];
+    
+    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = 50;
+    textureDescriptor.height = 50;
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
+
     MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:device];
     NSError *error;
-    id<MTLTexture> texture = [loader newTextureWithCGImage:cgImage options:nil error:&error];
+    texture = [loader newTextureWithData:[NSData dataWithBytes:data length:length] options:nil error:&error];
     if (error) {
-        NSLog(@"无法从图像数据创建 MTL 输出: %@", error.localizedDescription);
-        return NULL;
-    }else{
+        NSLog(@"Error loading texture: %@", error.localizedDescription);
+        return nil;
+    } else {
         return texture;
     }
-    return NULL;
 }
 
-static void NetGetHeroImage(int HeroID)
-{
+//读取沙盒文件图标
+static NSString* getFilePath(NSString*fileName) {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsPath = [paths objectAtIndex:0];
+    NSString *imgPath = [documentsPath stringByAppendingPathComponent:@"IMG"];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:imgPath]) {
+        NSError *error;
+        [[NSFileManager defaultManager] createDirectoryAtPath:imgPath withIntermediateDirectories:YES attributes:nil error:&error];
+        if (error) {
+            NSLog(@"创建目录失败: %@", error.localizedDescription);
+            return nil;
+        }
+    }
+    return [imgPath stringByAppendingPathComponent:fileName];
+}
+
+// 异步下载图片
+static void DocumenImageAsync(int HeroID, int 召唤师技能ID,int 编号) {
+    
     SaveImage Temp;
     Temp.HeroID = HeroID;
-    static UIImage*Image[5];
-    static NSString*urlstring;
-    for (int i=0; i<5; i++) {
-        if (i==0) {
+    NetImage.push_back(Temp);
+    
+    static NSString *urlstring;
+    static id<MTLTexture> Texture = NULL;
+    NSData *imageData;
+    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
+    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+        //如果文件存在 走本地
+        imageData = [NSData dataWithContentsOfFile:filePath];
+        
+        Texture = loadImageTexture(imageData);
+    }else{
+        //不存在走网络下载
+        if (编号==0) {
+            //头像
             urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
+        }else if(编号==4){
+            urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
         }else{
-            urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,i*10];
+            //技能
+            urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
         }
         
         NSURL *url = [NSURL URLWithString:urlstring];
-        NSData *data = [NSData dataWithContentsOfURL:url];
-        if (data.length < 1000)
+        imageData = [NSData dataWithContentsOfURL:url];
+        if (imageData.length < 1000)
         {
-            //重复下载20次直到下载完成图片
-            for (int i=0; i<20; i++) {
-                data = [NSData dataWithContentsOfURL:url];
-                if (data.length > 1000) break;
+            //重复下载5次直到下载完成图片
+            for (int i=0; i<5; i++) {
+                imageData = [NSData dataWithContentsOfURL:url];
+                if (imageData.length > 1000){
+                    break;
+                }
             }
         }
-        Image[i]=[UIImage imageWithData:data];
+        [imageData writeToFile:filePath atomically:YES];//写入本地文件
         //判断真玩家 能正常获取头像的
-        if (Image[i]!=nil) {
-            Temp.IsPlays=true;
-        }
-        Temp.图片纹理ID[i]=getTextureID(Image[i]);
+        Texture=loadImageTexture(imageData);
+        
     }
     
-    NetImage.push_back(Temp);
+    // 使用范围for循环遍历 NetImage
+    for (SaveImage &image : NetImage) {
+        if (image.HeroID == HeroID) {
+            image.图片纹理ID[编号] = Texture;
+            break;  // 找到并修改后，跳出循环
+        }
+    }
+    
 }
 
-static id<MTLTexture> GetHeroImage(int HeroID ,int 编号)
-{
-    
-    for (int i=0;i<NetImage.size();i++)
-    {
+// 异步获取图片
+static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
+    static id<MTLTexture> Texture = NULL;
+    for (int i = 0; i < NetImage.size(); i++) {
         if (NetImage[i].HeroID == HeroID) {
-            return NetImage[i].图片纹理ID[编号];
+            Texture = NetImage[i].图片纹理ID[编号];
+            completionHandler(Texture);
+            return;
         }
     }
-    NetGetHeroImage(HeroID);
-    return NULL;
-}
-static bool IsPlays(int HeroID)
-{
-    
-    for (int i=0;i<NetImage.size();i++)
-    {
-        if (NetImage[i].HeroID == HeroID) {
-            return NetImage[i].IsPlays;
-        }
+    if (Texture == NULL) {
+        //多线程
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            DocumenImageAsync(HeroID, 召唤师技能ID, 编号);
+        });
     }
     
-    return false;
+    completionHandler(Texture);
 }
+
 #pragma mark - 触摸互动
 - (void)updateIOWithTouchEvent:(UIEvent *)event
 {
