@@ -493,7 +493,6 @@ std::vector<SaveImage> NetImage;
         //左上角地图方框
         if (方框开关) {
             MsDrawList->AddRect(ImVec2(小地图方框横轴,0), ImVec2(小地图方框横轴+小地图方框大小,小地图方框大小), ImColor(方框颜色));
-            
         }
         
         if (RefreshMatrix())
@@ -752,45 +751,6 @@ static NSString* getFilePath(NSString*fileName) {
     }
     return [imgPath stringByAppendingPathComponent:fileName];
 }
-
-// 异步下载图片
-static void DocumenImageAsync(int HeroID, int 召唤师技能ID) {
-    //判断是否已经下载过图片 下载过就跳过
-    static NSString *urlstring;
-    for (int 编号=0; 编号<5; 编号++) {
-        NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
-        
-        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-            //不存在走网络下载
-            
-            if (编号==0) {
-                //头像
-                urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
-            }else if(编号==4){
-                urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
-            }else{
-                //技能
-                urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
-            }
-            
-            NSURL *url = [NSURL URLWithString:urlstring];
-            NSData*imageData = [NSData dataWithContentsOfURL:url];
-            if (imageData.length < 1000)
-            {
-                //重复下载5次直到下载完成图片
-                for (int i=0; i<5; i++) {
-                    imageData = [NSData dataWithContentsOfURL:url];
-                    if (imageData.length > 1000){
-                        break;
-                    }
-                }
-            }
-            
-            [imageData writeToFile:filePath atomically:YES];//写入本地文件
-        }
-    }
-    
-}
 //读取纹理ID NSData形式
 static id<MTLTexture> loadImageTexture(NSData *imageData){
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -813,6 +773,50 @@ static id<MTLTexture> loadImageTexture(NSData *imageData){
     }
     return NULL;
 }
+// 异步下载图片
+static void DocumenImageAsync(int HeroID, int 召唤师技能ID) {
+    //多线程
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        //判断是否已经下载过图片 下载过就跳过
+        static NSString *urlstring;
+        for (int 编号=0; 编号<5; 编号++) {
+            NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
+            
+            if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+                //不存在走网络下载
+                
+                if (编号==0) {
+                    //头像
+                    urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
+                }else if(编号==4){
+                    urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
+                }else{
+                    //技能
+                    urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
+                }
+                
+                NSURL *url = [NSURL URLWithString:urlstring];
+                NSData*imageData = [NSData dataWithContentsOfURL:url];
+                if (imageData.length < 1000)
+                {
+                    //重复下载5次直到下载完成图片
+                    for (int i=0; i<5; i++) {
+                        imageData = [NSData dataWithContentsOfURL:url];
+                        if (imageData.length > 1000){
+                            break;
+                        }
+                    }
+                }
+                
+                [imageData writeToFile:filePath atomically:YES];//写入本地文件
+            }
+        }
+        
+    });
+    
+}
+
 // 异步获取图片
 static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
     static id<MTLTexture> Texture = NULL;
@@ -829,9 +833,7 @@ static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, voi
     Texture = loadImageTexture(imageData);
     //多线程
     if (Texture==NULL) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            DocumenImageAsync(HeroID, 召唤师技能ID);
-        });
+        DocumenImageAsync(HeroID, 召唤师技能ID);
     }else{
         SaveImage Temp;
         Temp.imageID = imageID;
@@ -841,6 +843,36 @@ static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, voi
     completionHandler(Texture);
 }
 
+// 全局变量，用于维护图片缓存
+std::unordered_map<int, id<MTLTexture>> imageCache;
+// 异步获取图片
+static void GetHeroImageAsync2(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
+    id<MTLTexture> texture = NULL;
+    int imageID = HeroID * 10 + 编号;
+    auto iterator = imageCache.find(imageID);
+    if (iterator != imageCache.end()) {
+        // 如果缓存中已经有该图片，则直接返回缓存中的纹理
+        completionHandler(iterator->second);
+        return;
+    }
+
+    // 否则从磁盘或网络中加载图片
+    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png", imageID]);
+    NSData* imageData = [NSData dataWithContentsOfFile:filePath];
+    if (imageData != nil) {
+        // 如果从磁盘中读取到了图片数据，则解码图片并将纹理添加到缓存中
+        texture = loadImageTexture(imageData);
+        if (texture != NULL) {
+            imageCache[imageID] = texture;
+            completionHandler(texture);
+            return;
+        }
+    }
+    // 如果从磁盘中没有读取到图片数据，则从网络下载图片
+    DocumenImageAsync(HeroID, 召唤师技能ID);
+    completionHandler(NULL);
+   
+}
 
 #pragma mark - 触摸互动
 - (void)updateIOWithTouchEvent:(UIEvent *)event
