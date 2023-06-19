@@ -5,6 +5,7 @@
 #import "ImGuiMem.h"
 #import "Class.h"
 #import "Config.h"
+#include <cmath>
 #define kWidth  [UIScreen mainScreen].bounds.size.width
 #define kHeight [UIScreen mainScreen].bounds.size.height
 #define iPhone8P ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(1242, 2208), [[UIScreen mainScreen] currentMode].size) : NO)
@@ -189,11 +190,60 @@ static void DrawText(ImDrawList* drawList, const char* text, float font_size, co
     // 绘制文本
     drawList->AddText(ImGui::GetFont(), font_size, text_pos, color, text);
 }
+//绘制图片
 static void DrawImage(ImDrawList* drawList,id<MTLTexture> ImageID,const ImVec2& 起点 , const ImVec2& 终点){
     if (ImageID ==NULL) return;
     drawList->AddImage((__bridge ImTextureID)ImageID, 起点, 终点);
 }
+//绘制圆角矩形
+static void DrawRoundedRect(ImDrawList* drawList, const ImVec2& start, const ImVec2& end, ImU32 color, float thickness, float rounding, bool fill)
+{
+    const float IM_PI =3.14159265358979323846f;
+    const float radius = rounding;
+    const ImVec2 size = ImVec2(end.x - start.x, end.y - start.y);
+    const ImVec2 center = ImVec2(start.x + size.x / 2.0f, start.y + size.y / 2.0f);
 
+    if (fill)
+    {
+        drawList->AddRectFilled(
+            ImVec2(center.x - size.x / 2.0f + radius, center.y - size.y / 2.0f + radius),
+            ImVec2(center.x + size.x / 2.0f - radius, center.y + size.y / 2.0f - radius),
+            color, radius);
+    }
+    else
+    {
+        drawList->AddRect(
+            ImVec2(center.x - size.x / 2.0f + radius, center.y - size.y / 2.0f + radius),
+            ImVec2(center.x + size.x / 2.0f - radius, center.y + size.y / 2.0f - radius),
+            color, radius, ImDrawCornerFlags_All, thickness);
+    }
+
+    drawList->PathArcTo(
+        ImVec2(center.x - size.x / 2.0f + radius, center.y - size.y / 2.0f + radius + thickness),
+        radius - thickness, IM_PI, IM_PI * 1.5f, ImDrawCornerFlags_TopLeft);
+    drawList->PathArcTo(
+        ImVec2(center.x - size.x / 2.0f + radius + thickness, center.y - size.y / 2.0f + radius),
+        radius - thickness, IM_PI * 1.5f, IM_PI * 2.0f, ImDrawCornerFlags_TopLeft | ImDrawCornerFlags_TopRight);
+    drawList->PathArcTo(
+        ImVec2(center.x + size.x / 2.0f - radius - thickness, center.y - size.y / 2.0f + radius),
+        radius - thickness, 0.0f, IM_PI * 0.5f, ImDrawCornerFlags_TopRight);
+    drawList->PathArcTo(
+        ImVec2(center.x + size.x / 2.0f - radius, center.y - size.y / 2.0f + radius + thickness),
+        radius - thickness, IM_PI * 0.5f, IM_PI, ImDrawCornerFlags_BotRight);
+    drawList->PathArcTo(
+        ImVec2(center.x + size.x / 2.0f - radius, center.y + size.y / 2.0f - radius - thickness),
+        radius - thickness, 0.0f, IM_PI * -0.5f, ImDrawCornerFlags_BotRight | ImDrawCornerFlags_BotLeft);
+    drawList->PathArcTo(
+        ImVec2(center.x + size.x / 2.0f - radius - thickness, center.y + size.y / 2.0f - radius),
+        radius - thickness, IM_PI * -0.5f, 0.0f, ImDrawCornerFlags_BotLeft);
+    drawList->PathArcTo(
+        ImVec2(center.x - size.x / 2.0f + radius + thickness, center.y + size.y / 2.0f - radius),
+        radius - thickness, IM_PI, IM_PI * -0.5f, ImDrawCornerFlags_TopLeft | ImDrawCornerFlags_BotLeft);
+    drawList->PathArcTo(
+        ImVec2(center.x - size.x / 2.0f + radius, center.y + size.y / 2.0f - radius - thickness),
+        radius - thickness, IM_PI * -0.5f, 0.0f, ImDrawCornerFlags_TopRight | ImDrawCornerFlags_BotRight);
+    drawList->PathStroke(color, true, thickness);
+}
 #pragma mark - IMGUI菜单
 char 输入框内容[256] = "";
 - (void)菜单{
@@ -432,7 +482,6 @@ float 小地图方框横轴,小地图方框大小,技能绘制x调节,技能绘�
 
 static Vector2 GameCanvas;
 static int YXsum = 0;
-
 std::vector<SaveImage> NetImage;
 #pragma mark - 绘制=====
 - (void)绘制:(ImDrawList*)MsDrawList
@@ -444,6 +493,7 @@ std::vector<SaveImage> NetImage;
         //左上角地图方框
         if (方框开关) {
             MsDrawList->AddRect(ImVec2(小地图方框横轴,0), ImVec2(小地图方框横轴+小地图方框大小,小地图方框大小), ImColor(方框颜色));
+            
         }
         
         if (RefreshMatrix())
@@ -522,6 +572,7 @@ std::vector<SaveImage> NetImage;
                         }
                         if (技能开关)
                         {
+                            
                             //方框下面的技能点
                             float 圆圈大小=20;
                             float x=BoxPos.x-30;
@@ -685,28 +736,6 @@ std::vector<SaveImage> NetImage;
 }
 
 #pragma mark 读取玩家头像
-//读取纹理ID NSData形式
-static id<MTLTexture> loadImageTexture(NSData *imageData){
-    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-    void *data= (void*)[imageData bytes];
-    NSUInteger length = [imageData length];
-    
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
-    textureDescriptor.width = 50;
-    textureDescriptor.height = 50;
-    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
-
-    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:device];
-    NSError *error;
-    texture = [loader newTextureWithData:[NSData dataWithBytes:data length:length] options:nil error:&error];
-    if (error) {
-        NSLog(@"Error loading texture: %@", error.localizedDescription);
-        return nil;
-    } else {
-        return texture;
-    }
-}
 
 //读取沙盒文件图标
 static NSString* getFilePath(NSString*fileName) {
@@ -725,80 +754,93 @@ static NSString* getFilePath(NSString*fileName) {
 }
 
 // 异步下载图片
-static void DocumenImageAsync(int HeroID, int 召唤师技能ID,int 编号) {
-    
-    SaveImage Temp;
-    Temp.HeroID = HeroID;
-    NetImage.push_back(Temp);
-    
+static void DocumenImageAsync(int HeroID, int 召唤师技能ID) {
+    //判断是否已经下载过图片 下载过就跳过
     static NSString *urlstring;
-    static id<MTLTexture> Texture = NULL;
-    NSData *imageData;
-    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
-    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-        //如果文件存在 走本地
-        imageData = [NSData dataWithContentsOfFile:filePath];
+    for (int 编号=0; 编号<5; 编号++) {
+        NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
         
-        Texture = loadImageTexture(imageData);
-    }else{
-        //不存在走网络下载
-        if (编号==0) {
-            //头像
-            urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
-        }else if(编号==4){
-            urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
-        }else{
-            //技能
-            urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
-        }
-        
-        NSURL *url = [NSURL URLWithString:urlstring];
-        imageData = [NSData dataWithContentsOfURL:url];
-        if (imageData.length < 1000)
-        {
-            //重复下载5次直到下载完成图片
-            for (int i=0; i<5; i++) {
-                imageData = [NSData dataWithContentsOfURL:url];
-                if (imageData.length > 1000){
-                    break;
+        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+            //不存在走网络下载
+            
+            if (编号==0) {
+                //头像
+                urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
+            }else if(编号==4){
+                urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
+            }else{
+                //技能
+                urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
+            }
+            
+            NSURL *url = [NSURL URLWithString:urlstring];
+            NSData*imageData = [NSData dataWithContentsOfURL:url];
+            if (imageData.length < 1000)
+            {
+                //重复下载5次直到下载完成图片
+                for (int i=0; i<5; i++) {
+                    imageData = [NSData dataWithContentsOfURL:url];
+                    if (imageData.length > 1000){
+                        break;
+                    }
                 }
             }
-        }
-        [imageData writeToFile:filePath atomically:YES];//写入本地文件
-        //判断真玩家 能正常获取头像的
-        Texture=loadImageTexture(imageData);
-        
-    }
-    
-    // 使用范围for循环遍历 NetImage
-    for (SaveImage &image : NetImage) {
-        if (image.HeroID == HeroID) {
-            image.图片纹理ID[编号] = Texture;
-            break;  // 找到并修改后，跳出循环
+            
+            [imageData writeToFile:filePath atomically:YES];//写入本地文件
         }
     }
     
 }
+//读取纹理ID NSData形式
+static id<MTLTexture> loadImageTexture(NSData *imageData){
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    void *data= (void*)[imageData bytes];
+    NSUInteger length = [imageData length];
+    if (length ==0) return NULL;
+    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = 50;
+    textureDescriptor.height = 50;
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
 
+    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:device];
+    NSError *error;
+    texture = [loader newTextureWithData:[NSData dataWithBytes:data length:length] options:nil error:&error];
+    if (error) {
+        NSLog(@"Error loading texture: %@", error.localizedDescription);
+    } else {
+        return texture;
+    }
+    return NULL;
+}
 // 异步获取图片
 static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
     static id<MTLTexture> Texture = NULL;
-    for (int i = 0; i < NetImage.size(); i++) {
-        if (NetImage[i].HeroID == HeroID) {
-            Texture = NetImage[i].图片纹理ID[编号];
-            completionHandler(Texture);
+    int imageID = HeroID*10+编号;
+    for (int i=0; i<NetImage.size(); i++) {
+        if (NetImage[i].imageID==imageID) {
+            completionHandler(NetImage[i].图片纹理ID);
             return;
         }
     }
-    if (Texture == NULL) {
-        //多线程
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            DocumenImageAsync(HeroID, 召唤师技能ID, 编号);
-        });
-    }
     
+    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",imageID]);
+    NSData*imageData = [NSData dataWithContentsOfFile:filePath];
+    Texture = loadImageTexture(imageData);
+    //多线程
+    if (Texture==NULL) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            DocumenImageAsync(HeroID, 召唤师技能ID);
+        });
+    }else{
+        SaveImage Temp;
+        Temp.imageID = imageID;
+        Temp.图片纹理ID = Texture;
+        NetImage.push_back(Temp);
+    }
     completionHandler(Texture);
 }
+
 
 #pragma mark - 触摸互动
 - (void)updateIOWithTouchEvent:(UIEvent *)event

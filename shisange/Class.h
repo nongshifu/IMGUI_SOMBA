@@ -72,8 +72,8 @@ struct SmobaMonsterTime{
 
 struct SaveImage
 {
-    int HeroID;
-    id<MTLTexture> 图片纹理ID[5] = { NULL };
+    int imageID;
+    id<MTLTexture> 图片纹理ID = { NULL };
    
 };
 
