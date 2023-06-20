@@ -34,8 +34,11 @@
         头像大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"头像大小"];
         GameCanvas.x = kWidth;
         GameCanvas.y = kHeight;
-        
         sharedInstance = [[self alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            DocumenZHSImage();
+            TestImage();
+        });
         
     });
     return sharedInstance;
@@ -535,11 +538,12 @@ std::vector<SaveImage> NetImage;
                                 MsDrawList->AddRectFilled(ImVec2(BoxPos.x-20, BoxPos.y+1), ImVec2(BoxPos.x-20+血量*40, BoxPos.y+10), ImColor(血条颜色));
                             }
                             // 绘制小地图玩家图像
-                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 0, ^(id<MTLTexture> texture) {
-                                ImVec2 pMin = ImVec2(MiniPos.x-头像大小, MiniPos.y-头像大小);
-                                ImVec2 pMax = ImVec2(MiniPos.x+头像大小, MiniPos.y+头像大小);
-                                DrawImage(MsDrawList, texture, pMin,pMax);
-                            });
+                            
+                            id<MTLTexture> texture = GetHeroImageAsync(读取英雄数据[i].英雄ID, 0);
+                            ImVec2 pMin = ImVec2(MiniPos.x-头像大小, MiniPos.y-头像大小);
+                            ImVec2 pMax = ImVec2(MiniPos.x+头像大小, MiniPos.y+头像大小);
+                            DrawImage(MsDrawList, texture, pMin,pMax);
+                            
                            
                             
                         }
@@ -584,38 +588,39 @@ std::vector<SaveImage> NetImage;
                             
                             //图片圆圈
                             if (读取英雄数据[i].Skill1) {
-                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 1, ^(id<MTLTexture> texture) {
-                                   ImVec2 pMin = ImVec2(x-圆圈大小/2, y+20-圆圈大小/2);
-                                   ImVec2 pMax = ImVec2(x+圆圈大小/2, y+20+圆圈大小/2);
-                                   DrawImage(MsDrawList, texture, pMin,pMax);
-                                });
-                                
+                                NSLog(@"技能1=%d",读取英雄数据[i].英雄ID);
+                                id<MTLTexture> texture = GetHeroImageAsync(读取英雄数据[i].英雄ID, 1);
+                                ImVec2 pMin = ImVec2(x-圆圈大小/2, y+20-圆圈大小/2);
+                                ImVec2 pMax = ImVec2(x+圆圈大小/2, y+20+圆圈大小/2);
+                                DrawImage(MsDrawList, texture, pMin,pMax);
                             }
                             if (读取英雄数据[i].Skill2) {
-                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 2, ^(id<MTLTexture> texture) {
+                                NSLog(@"技能2=%d",读取英雄数据[i].英雄ID);
+                                id<MTLTexture> texture = GetHeroImageAsync(读取英雄数据[i].英雄ID, 2);
                                    ImVec2 pMin = ImVec2(x+圆圈大小-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小+圆圈大小/2, y+20+圆圈大小/2);
                                     DrawImage(MsDrawList, texture, pMin,pMax);
-                                });
+                                
                                
                             }
                             if (读取英雄数据[i].Skill3) {
-                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 3, ^(id<MTLTexture> texture) {
+                                NSLog(@"技能3=%d",读取英雄数据[i].英雄ID);
+                                id<MTLTexture> texture = GetHeroImageAsync(读取英雄数据[i].英雄ID, 3);
                                     ImVec2 pMin = ImVec2(x+圆圈大小*2-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小*2+圆圈大小/2, y+20+圆圈大小/2);
                                     DrawImage(MsDrawList, texture, pMin,pMax);
-                                });
+                               
                                
                             }else{
                                 //4个小点上的倒计时
                                 DrawText(MsDrawList, 大招倒计时文字, 12, ImVec2(x+圆圈大小*2, y+20), ImColor(方框颜色), true);
                             }
                             if (读取英雄数据[i].Skill4) {
-                                GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 4, ^(id<MTLTexture> texture) {
+                                id<MTLTexture> texture = GetZHSAsync(读取英雄数据[i].召唤师技能ID);
                                     ImVec2 pMin = ImVec2(x+圆圈大小*3-圆圈大小/2, y+20-圆圈大小/2);
                                     ImVec2 pMax = ImVec2(x+圆圈大小*3+圆圈大小/2, y+20+圆圈大小/2);
                                     DrawImage(MsDrawList, texture, pMin,pMax);
-                                });
+
                                 
                                 
                             }else{
@@ -630,22 +635,19 @@ std::vector<SaveImage> NetImage;
                             YXsum++;
                             // 绘制图玩家图像
                             
-                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 0, ^(id<MTLTexture> texture) {
-                                ImVec2 pMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 0);
-                                ImVec2 pMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节);
-                                DrawImage(MsDrawList, texture, pMin ,pMax);
-                            });
+                            id<MTLTexture> texture = GetHeroImageAsync(读取英雄数据[i].英雄ID, 0);
+                            ImVec2 pMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 0);
+                            ImVec2 pMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节);
+                            DrawImage(MsDrawList, texture, pMin ,pMax);
+                            
                             
                             
                             //召唤师图标
-                            GetHeroImageAsync(读取英雄数据[i].英雄ID, 读取英雄数据[i].召唤师技能ID, 4, ^(id<MTLTexture> texture) {
-                                if (texture==NULL) {
-                                    NSLog(@"空的=%d  %d",读取英雄数据[i].英雄ID,读取英雄数据[i].召唤师技能ID);
-                                }
-                                ImVec2 DZpMin = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 技能绘制y调节+10);
-                                ImVec2 DZpMax = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节*2+10);
-                                DrawImage(MsDrawList, texture, DZpMin ,DZpMax);
-                            });
+                            id<MTLTexture> texture2 = GetZHSAsync(读取英雄数据[i].召唤师技能ID);
+                            ImVec2 DZpMin2 = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum, 技能绘制y调节+10);
+                            ImVec2 DZpMax2 = ImVec2(技能绘制x调节 + (技能绘制y调节+3)*YXsum+技能绘制y调节, 技能绘制y调节*2+10);
+                            DrawImage(MsDrawList, texture2, DZpMin2 ,DZpMax2);
+                            
                             
                             
                            
@@ -773,105 +775,103 @@ static id<MTLTexture> loadImageTexture(NSData *imageData){
     }
     return NULL;
 }
-// 异步下载图片
-static void DocumenImageAsync(int HeroID, int 召唤师技能ID) {
-    //多线程
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        
-        //判断是否已经下载过图片 下载过就跳过
-        static NSString *urlstring;
-        for (int 编号=0; 编号<5; 编号++) {
-            NSString *filePath = getFilePath([NSString stringWithFormat:@"%d%d.png",HeroID,编号]);
-            
-            if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-                //不存在走网络下载
-                
-                if (编号==0) {
-                    //头像
-                    urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",HeroID];
-                }else if(编号==4){
-                    urlstring=[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png",召唤师技能ID];
-                }else{
-                    //技能
-                    urlstring=[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",HeroID,HeroID,编号*10];
+
+static void DocumenZHSImage() {
+    static NSURL *getimageurl;
+    static NSArray *array = @[@80102,@80103,@80104,@80105,@80107,@80108,@80109,@80110,@80115,@80121];
+    static NSData *data;
+    for (int i=0; i<array.count; i++) {
+        NSNumber *number = array[i];
+        int intValue = [number intValue];
+        getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png", intValue]];
+        NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",intValue]);
+        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+            data = [NSData dataWithContentsOfURL:getimageurl];
+            NSLog(@"不存在 下载getimageurl=%@  data=%@",getimageurl,data);
+            if (data.length < 1000)
+            {
+                NSLog(@"data.length<1000 =%ld",data.length);
+                for (int i=0; i<10; i++) {
+                    data = [NSData dataWithContentsOfURL:getimageurl];
+                    if (data.length > 1000){
+                       
+                        break;
+                    }
                 }
-                
-                NSURL *url = [NSURL URLWithString:urlstring];
-                NSData*imageData = [NSData dataWithContentsOfURL:url];
-                if (imageData.length < 1000)
+            }
+            [data writeToFile:filePath atomically:YES];
+        }else{
+            data = [NSData dataWithContentsOfFile:filePath];
+        }
+        
+        NSLog(@"储存缓存data.length =%ld",data.length);
+        SaveImage Temp;
+        Temp.imageID = intValue;
+        Temp.图片纹理ID = loadImageTexture(data);
+        NetImage.push_back(Temp);
+    }
+    
+}
+static void TestImage() {
+    static NSURL *getimageurl;
+    static NSData *data;
+    for (int i=100; i<600; i++) {
+        for (int ii=0; ii<3; ii++) {
+            int ID=i*10+ii;
+            if(ii==0){
+                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png", i]];
+            }else{
+                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d%d.png",i, ii*10]];
+            }
+            NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",ID]);
+            if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+                data = [NSData dataWithContentsOfURL:getimageurl];
+                if (data.length < 1000)
                 {
-                    //重复下载5次直到下载完成图片
                     for (int i=0; i<5; i++) {
-                        imageData = [NSData dataWithContentsOfURL:url];
-                        if (imageData.length > 1000){
+                        data = [NSData dataWithContentsOfURL:getimageurl];
+                        if (data.length > 1000){
                             break;
                         }
                     }
                 }
-                
-                [imageData writeToFile:filePath atomically:YES];//写入本地文件
+                [data writeToFile:filePath atomically:YES];
+            }
+            data = [NSData dataWithContentsOfFile:filePath];
+            if (data.length>1000) {
+                SaveImage Temp;
+                Temp.imageID = ID;
+                Temp.图片纹理ID = loadImageTexture(data);
+                NetImage.push_back(Temp);
             }
         }
         
-    });
+    }
     
 }
 
 // 异步获取图片
-static void GetHeroImageAsync(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
+static id<MTLTexture> GetHeroImageAsync(int HeroID, int 编号) {
     static id<MTLTexture> Texture = NULL;
     int imageID = HeroID*10+编号;
     for (int i=0; i<NetImage.size(); i++) {
         if (NetImage[i].imageID==imageID) {
-            completionHandler(NetImage[i].图片纹理ID);
-            return;
+            Texture = NetImage[i].图片纹理ID;
+            return Texture;
+        }
+    }
+    return Texture;
+}
+static id<MTLTexture> GetZHSAsync(int ZHSID) {
+    static id<MTLTexture> Texture = NULL;
+    for (int i=0; i<NetImage.size(); i++) {
+        if (NetImage[i].imageID==ZHSID) {
+            Texture = NetImage[i].图片纹理ID;
+            return Texture;
         }
     }
     
-    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",imageID]);
-    NSData*imageData = [NSData dataWithContentsOfFile:filePath];
-    Texture = loadImageTexture(imageData);
-    //多线程
-    if (Texture==NULL) {
-        DocumenImageAsync(HeroID, 召唤师技能ID);
-    }else{
-        SaveImage Temp;
-        Temp.imageID = imageID;
-        Temp.图片纹理ID = Texture;
-        NetImage.push_back(Temp);
-    }
-    completionHandler(Texture);
-}
-
-// 全局变量，用于维护图片缓存
-std::unordered_map<int, id<MTLTexture>> imageCache;
-// 异步获取图片
-static void GetHeroImageAsync2(int HeroID, int 召唤师技能ID, int 编号, void (^completionHandler)(id<MTLTexture>)) {
-    id<MTLTexture> texture = NULL;
-    int imageID = HeroID * 10 + 编号;
-    auto iterator = imageCache.find(imageID);
-    if (iterator != imageCache.end()) {
-        // 如果缓存中已经有该图片，则直接返回缓存中的纹理
-        completionHandler(iterator->second);
-        return;
-    }
-
-    // 否则从磁盘或网络中加载图片
-    NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png", imageID]);
-    NSData* imageData = [NSData dataWithContentsOfFile:filePath];
-    if (imageData != nil) {
-        // 如果从磁盘中读取到了图片数据，则解码图片并将纹理添加到缓存中
-        texture = loadImageTexture(imageData);
-        if (texture != NULL) {
-            imageCache[imageID] = texture;
-            completionHandler(texture);
-            return;
-        }
-    }
-    // 如果从磁盘中没有读取到图片数据，则从网络下载图片
-    DocumenImageAsync(HeroID, 召唤师技能ID);
-    completionHandler(NULL);
-   
+    return Texture;
 }
 
 #pragma mark - 触摸互动

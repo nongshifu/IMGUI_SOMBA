@@ -12,7 +12,7 @@
 #define BSPHP_PASSWORD @"6IrQ34YSce9hrFb2X1"
 
 //版本 和软件配置版本号一致 发布新版的时候 修改软件配置的版本号并且在URL那填写下载地址即可 客户端会弹出更新 确定会跳转浏览器下载
-#define JN_VERSION @"2.1"
+#define JN_VERSION @"2.0"
 
 //加密秘钥 这个在服务器文件后台 网站目录/include/applibapi/encryption下的bsphp_3des_vi.php 里面保持一致 搜索bsphp666就有3处地方都改掉 和这里源码一致 BS安装默认为bsphp666
 //**注意 仅限8位数

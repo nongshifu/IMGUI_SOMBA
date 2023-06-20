@@ -19,7 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 extern bool 菜单显示状态;
 extern bool 透视开关,全选,技能开关,野怪绘制开关,血条开关,方框开关,射线开关,兵线,野怪倒计时开关,绘制过直播开关,技能倒计时开关;
 extern float 小地图方框横轴,小地图方框大小,技能绘制x调节,技能绘制y调节,小地图血圈大小,头像大小;
-
 + (instancetype)sharedInstance;
 @end
 
