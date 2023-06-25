@@ -9,7 +9,11 @@
 //    [getKeychain removeKeychainDataForKey:@"ShiSanGeDZKM"];//清除卡密
 //    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"公告"];//清除公告
 //    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"到期时间"];//清除到期时间
-
+    设备特征码=@"";
+    到期时间=@"";
+    软件信息=@"";
+    验证信息=@"";
+    卡密=@"";
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[WX_NongShiFu123 alloc] BSPHP];
     });

@@ -26,6 +26,7 @@
     static ImGuiMem *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        
         小地图方框横轴=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框横轴"];
         小地图方框大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框大小"];
         技能绘制x调节=[[NSUserDefaults standardUserDefaults] floatForKey:@"技能绘制x调节"];
@@ -288,7 +289,7 @@ char 输入框内容[256] = "";
             if(ImGui::Checkbox("过直播开关", &绘制过直播开关)){
                 self.secureTextEntry=绘制过直播开关;
             }
-            
+
             ImGui::Checkbox("技能", &技能开关);
             ImGui::SameLine();
             ImGui::Checkbox("技能倒计时", &技能倒计时开关);
@@ -296,57 +297,57 @@ char 输入框内容[256] = "";
             ImGui::Checkbox("野怪", &野怪绘制开关);
             ImGui::SameLine();
             ImGui::Checkbox("野怪倒计时", &野怪倒计时开关);
-            
+
             ImGui::Checkbox("血条", &血条开关);
-            
+
             ImGui::SameLine();
             ImGui::Checkbox("兵线", &兵线);
             ImGui::ColorEdit3("血条颜色", (float*)&血条颜色);
-            
-            
+
+
             ImGui::Checkbox("方框", &方框开关);
             ImGui::ColorEdit3("方框颜色", (float*) &方框颜色);
-            
-            
+
+
             ImGui::Checkbox("射线", &射线开关);
             ImGui::ColorEdit3("射线颜色", (float*) &射线颜色);
-            
+
             ImGui::EndTabItem(); // 结束第一个选项卡
         }
-        
+
         if (ImGui::BeginTabItem("高级功能")) // 开始第二个选项卡
         {
             // 在这里添加第二个选项卡的内容
-            
+
             ImGui::NewLine();
-            
+
             if (ImGui::SliderFloat("小地图血圈大小", &小地图血圈大小, 0, 80)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:        小地图血圈大小 forKey:@"小地图血圈大小"];
             }
             if (ImGui::SliderFloat("头像大小", &头像大小, 0, 80)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:头像大小 forKey:@"头像大小"];
             }
-            
+
             if (ImGui::SliderFloat("小地图横轴", &小地图方框横轴, 0, 500)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:小地图方框横轴 forKey:@"小地图方框横轴"];
             }
             if (ImGui::SliderFloat("小地图方框大小", &小地图方框大小, 0, 500)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:小地图方框大小 forKey:@"小地图方框大小"];
             }
-            
-           
-            
+
+
+
             if(ImGui::SliderFloat("技能图标横轴", &技能绘制x调节, 0, 500)){
                 [[NSUserDefaults standardUserDefaults] setFloat:技能绘制x调节 forKey:@"技能绘制x调节"];
             }
-            
+
             if(ImGui::SliderFloat("技能图标大小", &技能绘制y调节, 0, 100)){
                 [[NSUserDefaults standardUserDefaults] setFloat:技能绘制y调节 forKey:@"技能绘制y调节"];
             }
-            
+
             ImGui::EndTabItem();
         }
-        
+
         if (ImGui::BeginTabItem("卡密验证")) // 开始第二个选项卡
         {
             ImGui::NewLine();
@@ -357,7 +358,7 @@ char 输入框内容[256] = "";
                 const char* banbemstr = strdup([str UTF8String]);
                 if (ImGui::Button(banbemstr)) {
                     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件url地址] options:@{} completionHandler:^(BOOL success) {
-                        
+
                     }];
                 }
             }else{
@@ -365,11 +366,11 @@ char 输入框内容[256] = "";
                 const char* banbemstr = strdup([str UTF8String]);
                 ImGui::Button(banbemstr);
             }
-            
+
             //公告========
             const char* ggstr = strdup([软件公告 UTF8String]);
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s",ggstr);
-            
+
             //验证菜单=====
             if (!验证状态) {
                 bool validated = false;
@@ -383,7 +384,7 @@ char 输入框内容[256] = "";
                 ImGui::NewLine();
                 // 输入框
                 ImGui::InputText("##input", 输入框内容, sizeof(输入框内容));
-                
+
                 // 粘贴按钮
                 if (ImGui::Button("粘贴")) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
@@ -398,12 +399,12 @@ char 输入框内容[256] = "";
                 ImGui::SameLine();
                 if (ImGui::Button("清除")) {
                     strncpy(输入框内容, @"".UTF8String, sizeof(输入框内容));
-                    
+
                 }
                 ImGui::SameLine();
-                
+
                 ImGui::SameLine();
-                
+
                 // 确认按钮
                 if (ImGui::Button("确认激活")) {
                     validated = true;
@@ -412,7 +413,7 @@ char 输入框内容[256] = "";
                         // 验证通过的逻辑
                         卡密 = [NSString stringWithUTF8String:输入框内容];
                         [[WX_NongShiFu123 alloc] yanzhengAndUseIt:卡密];
-                       
+
                     }
                 }
                 if(软件网页地址.length>5){
@@ -421,36 +422,36 @@ char 输入框内容[256] = "";
                         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
                             exit(0);
                         }];
-                        
+
                     }
                 }
-                
-                
+
+
             }else{
-                
+
                 const char* kmcstr = strdup([卡密 UTF8String]);
-                
+
                 ImGui::Text("卡密:%s",kmcstr);
                 if (ImGui::Button("复制本地卡密")) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string=卡密;
-                    
+
                 }
                 ImGui::SameLine();
                 if(软件网页地址.length>5){
                     ImGui::SameLine();
                     if (ImGui::Button("购买卡密")) {
                         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
-                            
+
                         }];
-                        
+
                     }
                 }
                 ImGui::NewLine();
-                
+
             }
-            
-            
+
+
             ImGui::NextColumn();
             ImGui::EndTabItem();
         }
@@ -458,6 +459,7 @@ char 输入框内容[256] = "";
         ImGui::EndTabBar(); // 结束选项卡栏
         
         const char* cstr = strdup([到期时间 UTF8String]);
+        
         ImVec4 color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // 红色
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::Text("到期时间:%s (%.1f FPS)", cstr,ImGui::GetIO().Framerate);
