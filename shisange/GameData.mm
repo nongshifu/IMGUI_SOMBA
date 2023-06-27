@@ -75,7 +75,7 @@ Vector2 ToMiniMap(Vector2 MiniMap,Vector2 HeroPos)
 //读取屏幕坐标
 static Vector2 GetPlayerPos(long Target)
 {
-    long Target_P1 = Read_Long(Target+0x1D0);
+    long Target_P1 = Read_Long(Target+0x1F0);
     long Target_P2 = Read_Long(Target_P1+0x10);
     long Target_P3 = Read_Long(Target_P2);
     long Target_P4 = Read_Long(Target_P3 + 0x10);
@@ -97,7 +97,7 @@ static bool GetKillActivate(long P_Skill)
 //读取4技能
 static void GetHeroSkill(long Target,bool *Skill1,bool *Skill2,bool *Skill3,bool *Skill4)
 {
-    long SkillList = Read_Long(Target+0x110);
+    long SkillList = Read_Long(Target+0x130);
     long P_Skill1 = Read_Long(SkillList+0xD8);
     long P_Skill2 = Read_Long(SkillList+0xF0);
     long P_Skill3 = Read_Long(SkillList+0x108);
@@ -118,13 +118,13 @@ static int GetPlayerTeam(long Target)
 //判断死亡
 static bool GetPlayerDead(long Target)
 {
-    long PlayerHP = Read_Long(Target+0x128);
+    long PlayerHP = Read_Long(Target+0x148);
     return Read_Int(PlayerHP+0x98)==0;
 }
 //血量百分百
 static float GetPlayerHP(long Target)
 {
-    long PlayerHP = Read_Long(Target + 0x128);
+    long PlayerHP = Read_Long(Target + 0x148);
     int HP = Read_Int(PlayerHP + 0x98) / 8192;
     int MaxHP = Read_Int(PlayerHP + 0xA8);
     if (HP == 0 || MaxHP == 0) return 0;
@@ -132,13 +132,13 @@ static float GetPlayerHP(long Target)
 }
 //当前血量
 static int32_t GetGameHP(long Target){
-    long HeroHP = Read_Long(Target+0x128);
+    long HeroHP = Read_Long(Target+0x148);
     int32_t HP = Read_Int(HeroHP+0xA0);
     return HP;
 }
 //最大血量
 static int32_t GetGameMaxHP(long Target){
-    long MonsterMaxHP = Read_Long(Target+0x128);
+    long MonsterMaxHP = Read_Long(Target+0x148);
     int32_t MaxHP = Read_Int(MonsterMaxHP+0xA8);
     return MaxHP;
 }
@@ -147,10 +147,9 @@ static int GetPlayerHero(long Target)
 {
     return Read_Int(Target+0x28);
 }
-
 //召唤师倒计时时间
 static int GetPlayerHeroTalentTime(long Target){
-    long PlayerTime1 = Read_Long(Target+ 0x110);
+    long PlayerTime1 = Read_Long(Target+ 0x130);
     long PlayerTime2 = Read_Long(PlayerTime1+ 0x150);
     long PlayerTime3 = Read_Long(PlayerTime2+ 0xA0);
     int PlayerTime4 = Read_Int(PlayerTime3+ 0x38);
@@ -158,24 +157,36 @@ static int GetPlayerHeroTalentTime(long Target){
 }
 //召唤师技能ID
 static int GetPlayerHeroTalent(long Target){
-    long PlayerData1 = Read_Long(Target+ 0x110);
+    long PlayerData1 = Read_Long(Target+ 0x130);
     long PlayerData2 = Read_Long(PlayerData1+ 0x150);
     return Read_Int(PlayerData2+ 0x330);
 }
 
 //大招倒计时
 static int GetGetHeroSkillTime(long Target){
-    long Target_P1 = Read_Long(Target + 0x110);
+    long Target_P1 = Read_Long(Target + 0x130);
     long Target_P2 = Read_Long(Target_P1 + 0x108);
     long Target_P3 = Read_Long(Target_P2 + 0xA0);
     int Target_P4 = Read_Int(Target_P3 + 0x38);
     int HeroSkillTime = Target_P4/8192000;
     return HeroSkillTime;
 }
-
+//1技能时间
+static int GetGetHero1SkillTime(long Target){
+    int Target_P1 = Read_Int(Target + 0x130);
+    int HeroSkillTime = Target_P1/8192000;
+    return HeroSkillTime;
+}
+//2技能时间
+static int GetGetHero2SkillTime(long Target){
+    long Target_P1 = Read_Int(Target + 0x130);
+    int Target_P2 = Read_Int(Target_P1 + 0x108);
+    int HeroSkillTime = Target_P2/8192000;
+    return HeroSkillTime;
+}
 //回城
 static bool GetHeroBack(long Target){
-    long GoBack_1 = Read_Long(Target+0x110);
+    long GoBack_1 = Read_Long(Target+0x130);
     long GoBack_2 = Read_Long(GoBack_1+0x168);
     long GoBack_3 = Read_Long(GoBack_2+0x110);
     int GoBack = Read_Int(GoBack_3+0x20);
@@ -185,7 +196,7 @@ static bool GetHeroBack(long Target){
 void GetPlayers(std::vector<SmobaHeroData> *Players)
 {
     Players->clear();
-    long PDatas = *(long*)(*(long*)(Game_Data)+0x378);
+    long PDatas = *(long*)(Game_Data+0x138);
     if (PDatas > Imageaddress)
     {
         
@@ -205,6 +216,7 @@ void GetPlayers(std::vector<SmobaHeroData> *Players)
                     HeroData.HeroMaxHP = GetGameMaxHP(P_player);
                     HeroData.Pos = GetPlayerPos(P_player);
                     HeroData.HP = GetPlayerHP(P_player);
+                   
                     HeroData.大招倒计时 = GetGetHeroSkillTime(P_player);
                     HeroData.召唤师技能ID = GetPlayerHeroTalent(P_player);
                     HeroData.召唤师技能倒计时 = GetPlayerHeroTalentTime(P_player);
@@ -283,13 +295,13 @@ static Vector2 MsMonsterLocFun(int offset){
 void GetMonster(std::vector<SmobaMonsterData> *野怪数据)
 {
     野怪数据->clear();
-    long PDatas = *(long*)(*(long*)(Game_Data)+0x378);
+    long PDatas = *(long*)(Game_Data+0x138);
     if (PDatas > Imageaddress)
     {
         
         long Monster_Data = *(long*)(PDatas+0x148);
         int Monster_Count = *(int*)(PDatas+0x164);
-        
+        NSLog(@"Monster_Count=%d",Monster_Count);
         for (int i=0; i < Monster_Count; i++) {
             SmobaMonsterData Monster;
             long P_Monster = *(long*)(Monster_Data+i*0x18);
@@ -330,21 +342,21 @@ void GetMonsterTime(std::vector<SmobaMonsterTime> *野怪倒计时数据)
 //数组
 bool RefreshMatrix()
 {
-    long P_Level1 = Read_Long(Game_Viewport+0xA0);
-    long P_Level2 = Read_Long(P_Level1);
-    long P_Level3 = Read_Long(P_Level2+0x10);
-    long Ptr_View =Read_Long(Read_Long(P_Level3 + 0x30)+0x30);
+    long P_Level1 = Read_Long(Game_Viewport+0x48);
+    long P_Level2 = Read_Long(P_Level1+0x48);
+    long P_Level3 = Read_Long(P_Level2+0xA0);
+    long Ptr_View =Read_Long(Read_Long(P_Level3 + 0x10)+0x50);
     if (Ptr_View < Imageaddress) return false;
-    long P_ViewMatrix = Read_Long(Ptr_View+0x18)+0x2C8;
+    long P_ViewMatrix = Read_Long(Ptr_View+0x10)+0x2C8;
     Read_Data(P_ViewMatrix,64,&ViewMatrix);
     return true;
 }
 //基础地址
 bool Gameinitialization()
 {
-    Imageaddress = _dyld_get_image_vmaddr_slide(0);
-    Game_Data = Read_Long(Imageaddress+0x10E2ACA50);
-    Game_Viewport = Read_Long(Imageaddress+0x10CDE16C8);
+    Imageaddress = _dyld_get_image_vmaddr_slide(0)+ 0xB510000;
+    Game_Data = Read_Long(Imageaddress+0x1027B0498);
+    Game_Viewport = Read_Long(Imageaddress+0x1016150C0);
     return Game_Data > Imageaddress && Game_Viewport > Imageaddress;
     
 }

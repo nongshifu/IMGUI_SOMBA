@@ -26,7 +26,6 @@
     static ImGuiMem *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        
         小地图方框横轴=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框横轴"];
         小地图方框大小=[[NSUserDefaults standardUserDefaults] floatForKey:@"小地图方框大小"];
         技能绘制x调节=[[NSUserDefaults standardUserDefaults] floatForKey:@"技能绘制x调节"];
@@ -289,65 +288,65 @@ char 输入框内容[256] = "";
             if(ImGui::Checkbox("过直播开关", &绘制过直播开关)){
                 self.secureTextEntry=绘制过直播开关;
             }
-
+            
             ImGui::Checkbox("技能", &技能开关);
             ImGui::SameLine();
             ImGui::Checkbox("技能倒计时", &技能倒计时开关);
             ImGui::SameLine();
             ImGui::Checkbox("野怪", &野怪绘制开关);
-            ImGui::SameLine();
-            ImGui::Checkbox("野怪倒计时", &野怪倒计时开关);
-
+//            ImGui::SameLine();
+//            ImGui::Checkbox("野怪倒计时", &野怪倒计时开关);
+            
             ImGui::Checkbox("血条", &血条开关);
-
+            
             ImGui::SameLine();
             ImGui::Checkbox("兵线", &兵线);
             ImGui::ColorEdit3("血条颜色", (float*)&血条颜色);
-
-
+            
+            
             ImGui::Checkbox("方框", &方框开关);
             ImGui::ColorEdit3("方框颜色", (float*) &方框颜色);
-
-
+            
+            
             ImGui::Checkbox("射线", &射线开关);
             ImGui::ColorEdit3("射线颜色", (float*) &射线颜色);
-
+            
             ImGui::EndTabItem(); // 结束第一个选项卡
         }
-
+        
         if (ImGui::BeginTabItem("高级功能")) // 开始第二个选项卡
         {
             // 在这里添加第二个选项卡的内容
-
+            
             ImGui::NewLine();
-
+            
             if (ImGui::SliderFloat("小地图血圈大小", &小地图血圈大小, 0, 80)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:        小地图血圈大小 forKey:@"小地图血圈大小"];
             }
             if (ImGui::SliderFloat("头像大小", &头像大小, 0, 80)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:头像大小 forKey:@"头像大小"];
             }
-
+            
             if (ImGui::SliderFloat("小地图横轴", &小地图方框横轴, 0, 500)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:小地图方框横轴 forKey:@"小地图方框横轴"];
             }
             if (ImGui::SliderFloat("小地图方框大小", &小地图方框大小, 0, 500)) {
                 [[NSUserDefaults standardUserDefaults] setFloat:小地图方框大小 forKey:@"小地图方框大小"];
             }
-
-
-
+            
+           
+            
             if(ImGui::SliderFloat("技能图标横轴", &技能绘制x调节, 0, 500)){
                 [[NSUserDefaults standardUserDefaults] setFloat:技能绘制x调节 forKey:@"技能绘制x调节"];
             }
-
+            
             if(ImGui::SliderFloat("技能图标大小", &技能绘制y调节, 0, 100)){
                 [[NSUserDefaults standardUserDefaults] setFloat:技能绘制y调节 forKey:@"技能绘制y调节"];
             }
-
+            
             ImGui::EndTabItem();
         }
-
+        
         if (ImGui::BeginTabItem("卡密验证")) // 开始第二个选项卡
         {
             ImGui::NewLine();
@@ -358,7 +357,7 @@ char 输入框内容[256] = "";
                 const char* banbemstr = strdup([str UTF8String]);
                 if (ImGui::Button(banbemstr)) {
                     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件url地址] options:@{} completionHandler:^(BOOL success) {
-
+                        
                     }];
                 }
             }else{
@@ -366,11 +365,11 @@ char 输入框内容[256] = "";
                 const char* banbemstr = strdup([str UTF8String]);
                 ImGui::Button(banbemstr);
             }
-
+            
             //公告========
             const char* ggstr = strdup([软件公告 UTF8String]);
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s",ggstr);
-
+            
             //验证菜单=====
             if (!验证状态) {
                 bool validated = false;
@@ -384,7 +383,7 @@ char 输入框内容[256] = "";
                 ImGui::NewLine();
                 // 输入框
                 ImGui::InputText("##input", 输入框内容, sizeof(输入框内容));
-
+                
                 // 粘贴按钮
                 if (ImGui::Button("粘贴")) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
@@ -399,12 +398,12 @@ char 输入框内容[256] = "";
                 ImGui::SameLine();
                 if (ImGui::Button("清除")) {
                     strncpy(输入框内容, @"".UTF8String, sizeof(输入框内容));
-
+                    
                 }
                 ImGui::SameLine();
-
+                
                 ImGui::SameLine();
-
+                
                 // 确认按钮
                 if (ImGui::Button("确认激活")) {
                     validated = true;
@@ -413,7 +412,7 @@ char 输入框内容[256] = "";
                         // 验证通过的逻辑
                         卡密 = [NSString stringWithUTF8String:输入框内容];
                         [[WX_NongShiFu123 alloc] yanzhengAndUseIt:卡密];
-
+                       
                     }
                 }
                 if(软件网页地址.length>5){
@@ -422,36 +421,36 @@ char 输入框内容[256] = "";
                         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
                             exit(0);
                         }];
-
+                        
                     }
                 }
-
-
+                
+                
             }else{
-
+                
                 const char* kmcstr = strdup([卡密 UTF8String]);
-
+                
                 ImGui::Text("卡密:%s",kmcstr);
                 if (ImGui::Button("复制本地卡密")) {
                     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
                     pasteboard.string=卡密;
-
+                    
                 }
                 ImGui::SameLine();
                 if(软件网页地址.length>5){
                     ImGui::SameLine();
                     if (ImGui::Button("购买卡密")) {
                         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
-
+                            
                         }];
-
+                        
                     }
                 }
                 ImGui::NewLine();
-
+                
             }
-
-
+            
+            
             ImGui::NextColumn();
             ImGui::EndTabItem();
         }
@@ -459,7 +458,6 @@ char 输入框内容[256] = "";
         ImGui::EndTabBar(); // 结束选项卡栏
         
         const char* cstr = strdup([到期时间 UTF8String]);
-        
         ImVec4 color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // 红色
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::Text("到期时间:%s (%.1f FPS)", cstr,ImGui::GetIO().Framerate);
@@ -491,6 +489,7 @@ std::vector<SaveImage> NetImage;
 #pragma mark - 绘制=====
 - (void)绘制:(ImDrawList*)MsDrawList
 {
+//    if(!验证状态)return;//验证通过才有绘制 测试完毕记得取消注释
     if (透视开关)
     {
         //读取基础地址
@@ -739,6 +738,50 @@ std::vector<SaveImage> NetImage;
 }
 
 #pragma mark 读取玩家头像
+static id GetHeroImageByID(NSData *data, bool isCircular) {
+    id texture;
+    id device = MTLCreateSystemDefaultDevice();
+
+    UIImage *image = [UIImage imageWithData:data];
+    if (image) {
+        if (isCircular) {
+            CGFloat width = image.size.width;
+            CGFloat height = image.size.height;
+            CGFloat radius = width > height ? height : width;
+            UIGraphicsBeginImageContext(CGSizeMake(radius, radius));
+            CGContextRef context = UIGraphicsGetCurrentContext();
+            CGRect rect = CGRectMake(0, 0, radius, radius);
+            CGContextSetLineWidth(context, 6);
+            CGContextAddEllipseInRect(context, rect);
+            CGContextClip(context);
+            [image drawInRect:rect];
+            UIImage *cir = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+            image = cir;
+        }
+
+        CGImageRef spriteImage = image.CGImage;
+        size_t pixelWidth = CGImageGetWidth(spriteImage);
+        size_t pixelHeight = CGImageGetHeight(spriteImage);
+        unsigned char *spriteData = (unsigned char *)malloc(pixelWidth * pixelHeight * 4);
+        CGContextRef spriteContext = CGBitmapContextCreate(spriteData, pixelWidth, pixelHeight, 8, pixelWidth * 4, CGImageGetColorSpace(spriteImage), kCGImageAlphaPremultipliedLast);
+        CGContextDrawImage(spriteContext, CGRectMake(0, 0, pixelWidth, pixelHeight), spriteImage);
+        CGContextRelease(spriteContext);
+
+        MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:pixelWidth height:pixelHeight mipmapped:NO];
+        textureDescriptor.usage = MTLTextureUsageShaderRead;
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+        texture = [device newTextureWithDescriptor:textureDescriptor];
+        if (spriteData) {
+            [texture replaceRegion:MTLRegionMake2D(0, 0, pixelWidth, pixelHeight) mipmapLevel:0 withBytes:spriteData bytesPerRow:pixelWidth * 4];
+            free(spriteData);
+            spriteData = NULL;
+        }
+        return texture;
+    }
+    return NULL;
+}
+
 
 //读取沙盒文件图标
 static NSString* getFilePath(NSString*fileName) {
@@ -755,37 +798,16 @@ static NSString* getFilePath(NSString*fileName) {
     }
     return [imgPath stringByAppendingPathComponent:fileName];
 }
-//读取纹理ID NSData形式
-static id<MTLTexture> loadImageTexture(NSData *imageData){
-    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-    void *data= (void*)[imageData bytes];
-    NSUInteger length = [imageData length];
-    if (length ==0) return NULL;
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
-    textureDescriptor.width = 50;
-    textureDescriptor.height = 50;
-    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
 
-    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:device];
-    NSError *error;
-    texture = [loader newTextureWithData:[NSData dataWithBytes:data length:length] options:nil error:&error];
-    if (error) {
-        NSLog(@"Error loading texture: %@", error.localizedDescription);
-    } else {
-        return texture;
-    }
-    return NULL;
-}
 
 static void DocumenZHSImage() {
-    static NSURL *getimageurl;
-    static NSArray *array = @[@80102,@80103,@80104,@80105,@80107,@80108,@80109,@80110,@80115,@80121];
-    static NSData *data;
+    NSURL *getimageurl;
+    NSArray *array = @[@80102,@80103,@80104,@80105,@80107,@80108,@80109,@80110,@80115,@80121];
+    NSData *data;
     for (int i=0; i<array.count; i++) {
         NSNumber *number = array[i];
         int intValue = [number intValue];
-        getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png", intValue]];
+        getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/summoner/%d.jpg", intValue]];
         NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",intValue]);
         if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
             data = [NSData dataWithContentsOfURL:getimageurl];
@@ -809,21 +831,21 @@ static void DocumenZHSImage() {
         NSLog(@"储存缓存data.length =%ld",data.length);
         SaveImage Temp;
         Temp.imageID = intValue;
-        Temp.图片纹理ID = loadImageTexture(data);
+        Temp.图片纹理ID = GetHeroImageByID(data,true);
         NetImage.push_back(Temp);
     }
     
 }
 static void TestImage() {
-    static NSURL *getimageurl;
-    static NSData *data;
+    NSURL *getimageurl;
+    NSData *data;
     for (int i=100; i<600; i++) {
         for (int ii=0; ii<3; ii++) {
             int ID=i*10+ii;
             if(ii==0){
-                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d.png", i]];
+                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d.jpg",i,i]];
             }else{
-                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://qmui.oss-cn-hangzhou.aliyuncs.com/CIKEimage/%d%d.png",i, ii*10]];
+                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d.png",i, ii*10]];
             }
             NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",ID]);
             if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
@@ -840,10 +862,11 @@ static void TestImage() {
                 [data writeToFile:filePath atomically:YES];
             }
             data = [NSData dataWithContentsOfFile:filePath];
+            
             if (data.length>1000) {
                 SaveImage Temp;
                 Temp.imageID = ID;
-                Temp.图片纹理ID = loadImageTexture(data);
+                Temp.图片纹理ID = GetHeroImageByID(data,true);
                 NetImage.push_back(Temp);
             }
         }
@@ -854,7 +877,7 @@ static void TestImage() {
 
 // 异步获取图片
 static id<MTLTexture> GetHeroImageAsync(int HeroID, int 编号) {
-    static id<MTLTexture> Texture = NULL;
+    id<MTLTexture> Texture = NULL;
     int imageID = HeroID*10+编号;
     for (int i=0; i<NetImage.size(); i++) {
         if (NetImage[i].imageID==imageID) {
@@ -865,7 +888,7 @@ static id<MTLTexture> GetHeroImageAsync(int HeroID, int 编号) {
     return Texture;
 }
 static id<MTLTexture> GetZHSAsync(int ZHSID) {
-    static id<MTLTexture> Texture = NULL;
+    id<MTLTexture> Texture = NULL;
     for (int i=0; i<NetImage.size(); i++) {
         if (NetImage[i].imageID==ZHSID) {
             Texture = NetImage[i].图片纹理ID;
@@ -917,6 +940,9 @@ static id<MTLTexture> GetZHSAsync(int ZHSID) {
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
     [self updateIOWithTouchEvent:event];
+    
 }
+
+
 @end
 
