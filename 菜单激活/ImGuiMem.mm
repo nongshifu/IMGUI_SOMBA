@@ -840,33 +840,44 @@ static void TestImage() {
     NSURL *getimageurl;
     NSData *data;
     for (int i=100; i<600; i++) {
+        NSLog(@"外部循环到玩家ID=%d",i);
         for (int ii=0; ii<3; ii++) {
+            NSLog(@"内部循环到玩家ID的第%d个技能",ii);
             int ID=i*10+ii;
             if(ii==0){
+                NSLog(@"==0 玩家头像=%d",ii);
                 getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d.jpg",i,i]];
             }else{
-                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d.png",i, ii*10]];
+                NSLog(@"！=0 玩家技能ID=%d",ID);
+                getimageurl = [NSURL URLWithString:[NSString stringWithFormat:@"https://game.gtimg.cn/images/yxzj/img201606/heroimg/%d/%d%d.png",i,i, ii*10]];
             }
+            NSLog(@" 目的是查看地址拼接是否错误 能否浏览器打开打印地址=%@",getimageurl);
             NSString *filePath = getFilePath([NSString stringWithFormat:@"%d.png",ID]);
             if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+                NSLog(@"文件不存在");
                 data = [NSData dataWithContentsOfURL:getimageurl];
                 if (data.length < 1000)
                 {
+                    NSLog(@"文件下载失败《10000");
                     for (int i=0; i<5; i++) {
                         data = [NSData dataWithContentsOfURL:getimageurl];
                         if (data.length > 1000){
+                            NSLog(@"文件下载成功 大小大于10000 退出循环");
                             break;
                         }
                     }
                 }
+                NSLog(@"运行到这 存储文件");
                 [data writeToFile:filePath atomically:YES];
             }
             data = [NSData dataWithContentsOfFile:filePath];
-            
+            NSLog(@"运行到这 读取存储文件data=%@",data);
             if (data.length>1000) {
+                NSLog(@"读取本地成功%@",data);
                 SaveImage Temp;
                 Temp.imageID = ID;
                 Temp.图片纹理ID = GetHeroImageByID(data,true);
+                NSLog(@"推送到内存缓存 内存缓存=%@",Temp.图片纹理ID );
                 NetImage.push_back(Temp);
             }
         }
